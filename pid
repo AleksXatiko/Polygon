@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<launch>	
+	<arg name="regul" default="1" />
+	<arg name="x" default="0" />
+	<arg name="y" default="0" />
+	
+	<node pkg="mavros" type="gcs_bridge" name="gcs_bridge" required="false" output="log">
+		<param name="gcs_url" value="/dev/rfd900:57600" />
+	</node>
+
+	
+	<node pkg="poly_ros" type="result" name="result" output="screen" >
+	<param name="error" value="0.20" />
+	<param name="degree" value="10.0" />
+	<param name="zero" value="0" />
+	<param name="circle" value="360" />
+	<param name="endElement" value="359" />
+	<param name="gap" value="1" />
+	<param name="minLength" value="2" />
+	</node>
+
+	<node pkg="poly_ros" type="main" name="main" required="false" output="screen">
+	<param name="regular" type ="int"  value="1" />
+	<param name="moveLocalCoordinates" type ="int"  value="84" />
+	<param name="distinction" type ="double" value ="0.2" />
+	<param name="range1" type ="int" value ="50" />
+	<param name="range2" type ="int" value ="250" />
+	<param name="min_distance" value ="0.45" />
+	<param name="zero" value="0" />
+	<param name="algorithm" value="$(arg regul)" />
+	<param name="pos_x" value="$(arg x)" />
+	<param name="pos_y" value="$(arg y)" />
+	</node>
+
+
+	<node pkg="mavros" type="mavros_node" name="mavros" required="false" clear_params="true" output="log">
+		<param name="fcu_url" value="/dev/ttyAMA0:57600" />
+		<param name="gcs_url" value="" />
+		<param name="target_system_id" value="1" />
+		<param name="target_component_id" value="1" />
+
+		<!-- load blacklist, config -->
+		<rosparam command="load" file="$(find mavros)/launch/apm_pluginlists.yaml" />
+		<rosparam command="load" file="$(find mavros)/launch/apm_config.yaml" />
+	</node>
+ 
+	<node name="rplidarNode" type="rplidarNode" pkg="rplidar_ros" output="log" respawn_delay="30">
+		<param name="serial_port" type="string" value="/dev/lidar"/>  
+		<param name="serial_baudrate" type="int" value="115200"/>
+		<param name="frame_id" type="string" value="laser"/>
+		<param name="inverted" type="bool" value="true"/>
+		<param name="angle_compensate" type="bool" value="true"/>
+	</node>
+	
+	<node pkg="tf" type="static_transform_publisher" name="laser_link" args="0.0 0.0 0.0 0.0 0.0 0.0 /base_link /laser 50" respawn_delay="30"/>
+
+	<node pkg="hector_mapping" type="hector_mapping" name="hector_mapping" output="log" respawn_delay="30">
+		<!-- Frame names --> 
+		<param name="map_frame" value="map" />
+		<param name="odom_frame" value="base_link" />
+
+		<!-- Map size / start point -->
+		<param name="map_resolution" value="0.025"/>
+		<param name="map_size" value="1024"/>
+		<param name="map_start_x" value="0.5"/>
+		<param name="map_start_y" value="0.5" />
+		<param name="map_multi_res_levels" value="3" />
+    
+		<!-- Map update parameters -->
+		<param name="update_factor_free" value="0.4"/>
+		<param name="update_factor_occupied" value="0.9" />    
+		<param name="map_update_distance_thresh" value="0.5"/>
+		<param name="map_update_angle_thresh" value="0.06" />
+		<param name="laser_z_min_value" value="-1.0" />
+		<param name="laser_z_max_value" value="1.0" />
+		<param name="laser_min_dist" value="0.05" />
+		<param name="laser_max_dist" value="30" />
+		<param name="map_pub_period" value="2.0" />
+    
+		<!-- Advertising config --> 
+		<param name="advertise_map_service" value="true"/>
+		<param name="scan_subscriber_queue_size" value="5"/>
+		<param name="scan_topic" value="scan"/>
+	</node>
+</launch>
