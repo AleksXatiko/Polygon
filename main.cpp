@@ -164,13 +164,13 @@ int main(int argc, char **argv)
 		//Если знаем, где мы и куда нам надо - предпримем какие-то действия, если нужно
 		if( target_set && position_set )
 			
-			//узнаем, исходя из координат  робота, координат заданной цели и угла робота относительно цели, какое действие нужно предпринять, чтобы оказаться в заданной точке
-			if (pos_x == 0 && pos_y == 0)
+			if (pos_x != 0 || pos_y != 0)
 			{
-				pos_x = target_x;
-				pos_y = target_y;
+				target_x = pos_x;
+				target_y = pos_y;
 			}
-			currentAction = getAction(current_x, current_y, current_yaw, pos_x, pos_y, &local_angle_to_target);
+			//узнаем, исходя из координат  робота, координат заданной цели и угла робота относительно цели, какое действие нужно предпринять, чтобы оказаться в заданной точке
+			currentAction = getAction(current_x, current_y, current_yaw, target_x, target_y, &local_angle_to_target);
 			
 			//взависимости от полученного действия рассчитаем упраляющее воздействие на шасси 			
 			control = controlAction(algorithm, currentAction, local_angle_to_target);

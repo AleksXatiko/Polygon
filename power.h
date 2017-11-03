@@ -7,7 +7,7 @@
 double errold = 0.0;
 double i_old = 0.0;
 
-//перечислимый тип выбора П-, ПД-регулятора или релейного
+//перечислимый тип выбора П-, ПД-, ПИД-регулятора или релейного
 enum controlMethod { relay=1, P_regulator, PD_regulator };
 #define relay 1
 #define P_regulator 2
@@ -22,9 +22,11 @@ const int LEFT = 1200;
 const int RIGHT = 1800;
 
 //коэффициенты регуляторов 
-const double kp = 120;//коэффициент П-регулятора
+const double kp = 221;//коэффициент П-регулятора
 const double kd = 180;//коэффициент Д-регулятора
 const double ki = 0.03;//коэффициент И-регулятора
+const int kl = -30;//коэффициент для левой гусеницы
+const int kr = 70;//коэффициент для правой гусеницы
 
 /*
 	алгоритм, реализующий управяющее воздействие

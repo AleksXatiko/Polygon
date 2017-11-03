@@ -17,11 +17,11 @@ double controlAction(int algorithm, int currentAction, double local_angle_to_tar
 	//если робот не стоит и не едет прямо, то будем считать управлюящее воздействие для движения
 	if (currentAction != ACTION_STAY && currentAction != ACTION_MOVE_FORWARD)
 	{
-		double err = local_angle_to_target; /*local_angle_to_target*/ //ошибка между заданной целью робота и его текущем положением
+		double err = fabs(local_angle_to_target); /*local_angle_to_target*/ //ошибка между заданной целью робота и его текущем положением
 			switch (algorithm)
 			{
 				case P_regulator: //Выбор П-регулятора по флагу
-					u = kp * err; //Вычисление управляющей Пропорционального регулятора
+					u = sqrt(err) * kp; //Вычисление управляющей Пропорционального регулятора
 					break;
 				case PD_regulator: //Выбор ПД-регулятора по флагу
 					u = kp * err + kd *(err - errold); //Вычисление управляющей Пропорционально-Дифференциального регулятора
@@ -98,25 +98,25 @@ rc.channels[2]-отвечает за движение гусениц вперёд
 					rc.channels[2] = STOP;
 			}
 		}
-		else //действуем по алгоритмам П- и ПД-регуляторов
+		else //действуем по алгоритмам П-, ПД-, ПИД-регуляторов
 		{
 			//если робот не едет прямо, то добавим управляюще воздейсвтие к шасси, чтобы он развернулся к цели
 			if (currentAction != ACTION_STAY)
 			{
-				if (control > 200)
-					control = 200;
-				else if (control < -200)
-					control = -200;
+				if (control > 249)
+					control = 249;
+				else if (control < -249)
+					control = -249;
 				
 				if (currentAction == ACTION_TURN_LEFT)
 				{
-					rc.channels[2] = STOP + 200 + control;
-					rc.channels[0] = STOP - 30 + control * 2;
+					rc.channels[2] = STOP + 249 + control;
+					rc.channels[0] = STOP + control * 2;
 				}
 				else
 				{
-					rc.channels[2] = STOP + 200;
-					rc.channels[0] = STOP + 70 + control * 2;
+					rc.channels[2] = STOP + 249;
+					rc.channels[0] = STOP + control * 2;
 				}
 				ROS_INFO("_______P________ %d %d %0.3f", rc.channels[2], rc.channels[0], (float)control);
 				/*
