@@ -17,14 +17,14 @@ extern bool obstructionClose;
 
 //константы для шасси
 const int STOP = 1500;
-const int MOVE = 1600;
+const int MOVE = 1650;
 const int LEFT = 1200;
 const int RIGHT = 1800;
 
 //коэффициенты регуляторов 
-const double kp = 221;//коэффициент П-регулятора
-const double kd = 180;//коэффициент Д-регулятора
-const double ki = 0.03;//коэффициент И-регулятора
+const double kp = 225;//коэффициент П-регулятора
+const double kd = 675;//коэффициент Д-регулятора
+const double ki = 0.1;//коэффициент И-регулятора
 const int kl = -30;//коэффициент для левой гусеницы
 const int kr = 70;//коэффициент для правой гусеницы
 

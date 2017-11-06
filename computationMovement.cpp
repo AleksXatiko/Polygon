@@ -31,9 +31,12 @@ int getAction(double current_x, double current_y, double current_angle, double t
     double global_angle_to_target=atan2(dy, dx); //глобальный угол к цели
     *local_angle_to_target=normalizeAngle(global_angle_to_target - current_angle); //текущий угол относително заданной цели
 	//ROS_INFO("angle=%0.2f", (float)(*local_angle_to_target));
-	ROS_INFO("_____TARGET______ %0.3f %0.3f", target_x, target_y);
-	ROS_INFO("_____CURRENT_____ %0.3f %0.3f", current_x, current_y);
-	ROS_INFO("_____ANGLE_______ %0.3f", *local_angle_to_target);
+	ROS_DEBUG("Target (x; y): %0.3f; %0.3f", target_x, target_y);
+	ROS_INFO("Target (x; y): %0.3f; %0.3f", target_x, target_y);
+	ROS_DEBUG("Robot (x; y): %0.3f; %0.3f", current_x, current_y);
+	ROS_INFO("Robot (x; y): %0.3f; %0.3f", current_x, current_y);
+	ROS_DEBUG("Angle: %0.3f", *local_angle_to_target);
+	ROS_INFO("Angle: %0.3f", *local_angle_to_target);
 
 	int action;
 	

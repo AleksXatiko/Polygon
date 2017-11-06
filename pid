@@ -20,7 +20,6 @@
 	</node>
 
 	<node pkg="poly_ros" type="main" name="main" required="false" output="screen">
-	<param name="regular" type ="int"  value="1" />
 	<param name="moveLocalCoordinates" type ="int"  value="84" />
 	<param name="distinction" type ="double" value ="0.2" />
 	<param name="range1" type ="int" value ="50" />

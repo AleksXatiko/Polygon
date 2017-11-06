@@ -17,7 +17,6 @@
 #include <geometry_msgs/Pose.h>
 
 int algorithm, pos_x, pos_y;
-int regular;
 int moveLocalCoordinates, range1, range2, zero;
 double distinction;
 double min_distance;
@@ -33,14 +32,13 @@ int main(int argc, char **argv)
 	nhPrivate.param("pos_x", pos_x, 0);
 	nhPrivate.param("pos_y", pos_y, 0);
 	nhPrivate.param("algorithm", algorithm, 1);
-    nhPrivate.param("regular", regular, 1);
     nhPrivate.param("movelocalCoorginates", moveLocalCoordinates, 84);
     nhPrivate.param("distinction", distinction, 0.2);
     nhPrivate.param("range1", range1, 50);
     nhPrivate.param("range2", range2, 250);
     nhPrivate.param("min_distance", min_distance,  0.45);
     nhPrivate.param("zero", zero, 0);
-    ROS_INFO("movee=%d",regular );
+    ROS_INFO("movee=%d", algorithm);
 
 	//не известа цель и положение робота 
     target_set=0;
