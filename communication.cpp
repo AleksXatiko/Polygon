@@ -109,16 +109,21 @@ int send_attitude(mavros_msgs::Mavlink &rmsg)
 void  chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
 {
     obstructionClose = false;
-    float k=6.0;
-    for (int i=0; i< mas->num; i++)
+	float min = 6.0;
+    int k = 0;
+    for (int i = 0; i < mas->num; i++)
     {
-	//ROS_INFO("(num: %d, degree1: %0.2f, degree2: %0.2f, min_distance: %0.2f)", mas->mass[i].nomer, mas->mass[i].angle1, mas->mass[i].angle2, mas->mass[i].min_distance);
-	if (mas->mass[i].min_distance < k)
-	    k = i;
+		if (mas->mass[i].angle1 < range1 || mas->mass[i].angle1 > range2 || mas->mass[i].angle2 < range1 || mas->mass[i].angle2 > range2 || mas->mass[i].angle1 > mas->mass[i].angle2)
+		{
+			if(mas->mass[i].min_distance < min)
+			{
+				min = mas->mass[i].min_distance;
+				k = i;
+			}
+		}
     }
-    if (((mas->mass[k].angle1 < range1) ||(mas->mass[k].angle2 > range2)) && ( mas->mass[k]. min_distance < min_distance))
-	obstructionClose = true;
-
+	if (mas->mass[k].min_distance < min_distance)
+		obstructionClose = true;
     //ROS_INFO( "(number of obstacle: %d)",  mas->num);
 }
 

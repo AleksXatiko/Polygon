@@ -23,7 +23,7 @@
 	<param name="moveLocalCoordinates" type ="int"  value="84" />
 	<param name="distinction" type ="double" value ="0.2" />
 	<param name="range1" type ="int" value ="50" />
-	<param name="range2" type ="int" value ="250" />
+	<param name="range2" type ="int" value ="310" />
 	<param name="min_distance" value ="0.45" />
 	<param name="zero" value="0" />
 	<param name="algorithm" value="$(arg regul)" />

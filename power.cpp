@@ -4,7 +4,7 @@
 
 /*
 	алгоритм, реализующий управяющее воздействие
-	основанный на Пропорциональном или Пропорционально-дифференциальном регуляторе, в зависимости от выбора пользователя
+	основанный на Пропорциональном, Пропорционально-Дифференциальном или Пропорцианольно-Интегрально-Дифференциальном регуляторе, в зависимости от выбора пользователя
 */
 bool obstructionClose = false;
 int zero;
@@ -46,7 +46,7 @@ double controlAction(int algorithm, int currentAction, double local_angle_to_tar
 	else
 	{
 		u = 0.0;
-	};
+	}
 	return u;
 }
 
@@ -81,8 +81,8 @@ rc.channels[2]-отвечает за движение гусениц вперёд
 			switch (currentAction)
 			{
 				case ACTION_MOVE_FORWARD: //едем прямо
-					rc.channels[2] = MOVE;
 					rc.channels[0] = STOP;
+					rc.channels[2] = MOVE;
 					ROS_INFO("MOVE");
 					break;
 				case ACTION_TURN_LEFT: //поворачиваем налево
@@ -100,54 +100,32 @@ rc.channels[2]-отвечает за движение гусениц вперёд
 		}
 		else //действуем по алгоритмам П-, ПД-, ПИД-регуляторов
 		{
-			//если робот не едет прямо, то добавим управляюще воздейсвтие к шасси, чтобы он развернулся к цели
-			if (currentAction == ACTION_MOVE_FORWARD)
+			/*	При повороте:
+			округлим управляющую составляющую и прибавим её к rc.channels[0], который отвечает за поворот
+			управляющая control будет иметь знак "+" или "-"(зависит от того, как повернулся робот и какой угол образовался между ним и целью)
+			и в зависимости от этого будет происходить поворот налево или направо
+			если у control знак "+", то направо
+			если у control знак "-", то налево
+			*/
+			switch (currentAction)
 			{
-				rc.channels[0] = STOP;
-				rc.channels[2] = MOVE;
-				ROS_INFO("Regulator: %d, MOVE", algorithm);
-				ROS_DEBUG("Regulator: %d, MOVE", algorithm);
-				/*
-				if (control > 200)
-					control = 200;
-				else if (control < -200)
-					control = -200;
-				
-				if (currentAction == ACTION_TURN_LEFT)
-				{
-					rc.channels[2] = STOP + 200 + control;
-					rc.channels[0] = STOP + control * 2;
-				}
-				else
-				{
-					rc.channels[2] = STOP + 200;
-					rc.channels[0] = STOP + control * 2;
-				}
-				
-				округлим управляющую составляющую и прибавим её к rc.channels[0], который отвечает за поворот
-				управляющая control будет иметь знак "+" или "-"(зависит от того, как повернулся робот и какой угол образовался между ним и целью)
-				и в зависимости от этого будет происходить поворот налево или направо
-				если у control знак "+", то направо
-				если у control знак "-", то налево
-
-			
-				rc.channels[0] = STOP + round(control);
-				rc.channels[2] = STOP;
-				*/
-			}
-			else if (currentAction == ACTION_STAY)
-			{
-				rc.channels[0] = STOP;
-				rc.channels[2] = STOP;
-				ROS_INFO("Regulator: %d, STOP", algorithm);
-				ROS_DEBUG("Regulator: %d, STOP", algorithm);
-			}
-			else
-			{
-				rc.channels[0] = STOP + (int)control;
-				rc.channels[2] = STOP;
-				ROS_INFO("Regulator: %d, Control: %0.3f", algorithm, (float)control);
-				ROS_DEBUG("Regulator: %d, Control: %0.3f", algorithm, (float)control);
+				case ACTION_MOVE_FORWARD: 	//едем прямо
+					rc.channels[0] = STOP;
+					rc.channels[2] = MOVE;
+					ROS_INFO("Regulator: %d, MOVE", algorithm);
+					ROS_DEBUG("Regulator: %d, MOVE", algorithm);
+					break;
+				case ACTION_STAY: 			//стоим
+					rc.channels[0] = STOP;
+					rc.channels[2] = STOP;
+					ROS_INFO("Regulator: %d, STOP", algorithm);
+					ROS_DEBUG("Regulator: %d, STOP", algorithm);
+					break;
+				default: 					//поворачиваем
+					rc.channels[0] = STOP + (int)control;
+					rc.channels[2] = STOP;
+					ROS_INFO("Regulator: %d, Control: %0.3f", algorithm, (float)control);
+					ROS_DEBUG("Regulator: %d, Control: %0.3f", algorithm, (float)control);
 			}
 		}
 	}
