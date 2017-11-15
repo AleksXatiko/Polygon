@@ -10,7 +10,7 @@
 #include <mavros/utils.h>
 #include <mavros/mavlink_diag.h>
 #include <mavconn/interface.h>
-#include "poly_ros/obstacles.h"
+#include "robotModel.h"
 #include "poly_ros/Num.h"
 #include "ros/ros.h"
 

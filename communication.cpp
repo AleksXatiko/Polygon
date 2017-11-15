@@ -113,7 +113,7 @@ void  chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
     int k = 0;
     for (int i = 0; i < mas->num; i++)
     {
-		if (mas->mass[i].angle1 < range1 || mas->mass[i].angle1 > range2 || mas->mass[i].angle2 < range1 || mas->mass[i].angle2 > range2 || mas->mass[i].angle1 > mas->mass[i].angle2)
+		if (obstacleCheck(mas, i, range1, range2))
 		{
 			if(mas->mass[i].min_distance < min)
 			{

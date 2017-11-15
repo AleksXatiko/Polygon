@@ -10,7 +10,7 @@
 #include <ros/console.h>
 #include <string>
 #include <ctime>
-#include "poly_ros/obstacles.h"
+#include "robotModel.h"
 //#include "poly_ros/Num.h"
 
 #include <geometry_msgs/PoseStamped.h>
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     nhPrivate.param("movelocalCoorginates", moveLocalCoordinates, 84);
     nhPrivate.param("distinction", distinction, 0.2);
     nhPrivate.param("range1", range1, 50);
-    nhPrivate.param("range2", range2, 250);
+    nhPrivate.param("range2", range2, 310);
     nhPrivate.param("min_distance", min_distance,  0.45);
     nhPrivate.param("zero", zero, 0);
     ROS_INFO("movee=%d", algorithm);
@@ -160,13 +160,13 @@ int main(int argc, char **argv)
 		//ROS_INFO("ALGORITHM %d", algorithm);
 
 		//Если знаем, где мы и куда нам надо - предпримем какие-то действия, если нужно
+		if (pos_x != 0 || pos_y != 0)
+		{
+			target_x = pos_x;
+			target_y = pos_y;
+			target_set = 1;
+		}
 		if( target_set && position_set )
-			
-			if (pos_x != 0 || pos_y != 0)
-			{
-				target_x = pos_x;
-				target_y = pos_y;
-			}
 			//узнаем, исходя из координат  робота, координат заданной цели и угла робота относительно цели, какое действие нужно предпринять, чтобы оказаться в заданной точке
 			currentAction = getAction(current_x, current_y, current_yaw, target_x, target_y, &local_angle_to_target);
 			
