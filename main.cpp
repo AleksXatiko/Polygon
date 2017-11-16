@@ -38,6 +38,8 @@ int main(int argc, char **argv)
     nhPrivate.param("range2", range2, 310);
     nhPrivate.param("min_distance", min_distance,  0.45);
     nhPrivate.param("zero", zero, 0);
+	
+	nhPrivate.param("p1", p1, 0);
     ROS_INFO("movee=%d", algorithm);
 
 	//не известа цель и положение робота 
@@ -173,6 +175,7 @@ int main(int argc, char **argv)
 			//взависимости от полученного действия рассчитаем упраляющее воздействие на шасси 			
 			control = controlAction(algorithm, currentAction, local_angle_to_target);
 			
+			ROS_INFO("TTTTTTTTTTTTTTTTT %d", p1);
 			//получив конкретное действие для достижения заданой цели, подадим роботу команды на шасси, чтобы он начал(или закончил) движение
 			updateRCfromAction(algorithm, control, currentAction,rc);
 			rc_pub.publish(rc);

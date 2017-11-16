@@ -29,8 +29,9 @@
 	<param name="algorithm" value="$(arg regul)" />
 	<param name="pos_x" value="$(arg x)" />
 	<param name="pos_y" value="$(arg y)" />
+	
+	<param name="p1" value="34" />
 	</node>
-
 
 	<node pkg="mavros" type="mavros_node" name="mavros" required="false" clear_params="true" output="log">
 		<param name="fcu_url" value="/dev/ttyAMA0:57600" />

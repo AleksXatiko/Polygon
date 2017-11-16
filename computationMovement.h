@@ -10,6 +10,7 @@ enum Action { STAY, MOVE_FORWARD, TURN_LEFT, TURN_RIGHT };
 #define ACTION_MOVE_FORWARD 1
 #define ACTION_TURN_LEFT 2
 #define ACTION_TURN_RIGHT 3
+#define ACTION_MOVE_BACK 4
 
 //Допустимые отклонения при управлении шасси, рассчитанные на погрешности при движении(люфт, погрешность измерения лидара, помехи и т.п.)
 #define MOVE_ACCURACY 0.15  //Если расстояние до заданной цели меньше этого параметра, то считаем, что робот приехал в заданную точку
