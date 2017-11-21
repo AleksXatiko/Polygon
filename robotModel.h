@@ -1,14 +1,8 @@
 #pragma once
 
-#include "poly_ros/obstacles.h"
+#include <ros/ros.h>
 #include <cmath>
-
-#define INFRONT 1
-#define BEHIND 2
-#define ASIDE 3
-
-//Проверка наличия препятствия в радиуе обзора
-bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, int range1, int range2, int side);
+#include "poly_ros/robotModel_parametrs.h"
 
 double GetW_X(double x1, double x2, double dx); //находим расстояние от центра робота до центров гусениц по оси X
 

@@ -1,0 +1,1 @@
+double64[] parametr

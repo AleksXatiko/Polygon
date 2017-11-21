@@ -24,13 +24,31 @@
 	<param name="distinction" type ="double" value ="0.2" />
 	<param name="range1" type ="int" value ="50" />
 	<param name="range2" type ="int" value ="310" />
-	<param name="min_distance" value ="0.45" />
 	<param name="zero" value="0" />
 	<param name="algorithm" value="$(arg regul)" />
 	<param name="pos_x" value="$(arg x)" />
 	<param name="pos_y" value="$(arg y)" />
 	
-	<param name="p1" value="34" />
+	</node>
+	
+	<node pkg="poly_ros" type="robotModel" name="robotModel" output="screen" >
+	<param name="p1" value="4.0" />
+	<param name="p2" value="4.5" />
+	<param name="p3" value="4.5" />
+	<param name="p4" value="3.0" />
+	<!-- <param name="left_caterpillar_width" value="2.8" />
+	<param name="right_caterpillar_width" value="2.8" />
+	<param name="left_caterpillar_length" value="28" />
+	<param name="right_caterpillar_lenght" value="28.0" />
+	<param name="distance_between_caterpillar" value="8.5" />
+	<param name="caterpillar_offset" value="0.0" />
+	<param name="lidar_x" value="10.0" />
+	<param name="lidar_y" value="10.0" />
+	<param name="min_distance" value ="0.45" />
+	<param name="turn_mode" value ="1" /> 
+	<param name="error_x" value ="1" /> 
+	<param name="error_y" value ="1" /> 
+	-->
 	</node>
 
 	<node pkg="mavros" type="mavros_node" name="mavros" required="false" clear_params="true" output="log">

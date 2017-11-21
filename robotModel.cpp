@@ -1,26 +1,34 @@
 #include "robotModel.h"
 
-//Проверка наличия препятствия в радиуе обзора
-bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, int range1, int range2, int side)
+double p1, p2, p3, p4;
+double left_caterpillar_width, right_caterpillar_width, left_caterpillar_length, right_caterpillar_lenght;
+double distance_between_caterpillar, caterpillar_offset;
+double lidar_x, lidar_y, error_x, error_y;
+double w_x, w_y, s_x, s_y, r, l, q, lidar_offset_x, lidar_offset_y;
+
+int main(int argc, char **argv)
 {
-	switch(side)
-	{
-		case INFRONT:
-			return  mas->mass[index].angle1 < range1 || 
-					mas->mass[index].angle1 > range2 || 
-					mas->mass[index].angle2 < range1 || 
-					mas->mass[index].angle2 > range2 || 
-					mas->mass[index].angle1 > mas->mass[index].angle2;
-		case BEHIND:
-			return  mas->mass[index].angle1 > range1 && 
-					mas->mass[index].angle1 < range2 || 
-					mas->mass[index].angle2 > range1 && 
-					mas->mass[index].angle2 < range2 || 
-					mas->mass[index].angle1 < mas->mass[index].angle2;
-		case ASIDE:
-			break;
-		
-	}
+	ros::init(argc, argv, "robotModel");
+    ros::NodeHandle nhPr("~");
+
+	nhPr.param("p1", p1, 7.0);
+	nhPr.param("p2", p2, 7.0);
+	nhPr.param("p3", p3, 7.0);
+	nhPr.param("p4", p4, 7.0);
+	
+	ros::NodeHandle nh;
+	chatter_pub = nh.advertise<robotModel_parametrs>("parametrs", 1000);
+	ros::spin(); 
+	
+	ROS_INFO("ASDASDASDASDASDasDADASSDASd");
+	double p[2];
+	p[0] = p1;
+	p[1] = p2;
+	poly_ros::robotModel_parametrs parametrs;
+	parametrs.parametr = p;
+	chatter_pub.publish(parametrs);
+	
+	return 0;
 }
 
 double GetW_X(double x1, double x2, double dx) //находим расстояние от центра робота до центров гусениц по оси X

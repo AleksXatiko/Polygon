@@ -10,22 +10,15 @@
 #include <ros/console.h>
 #include <string>
 #include <ctime>
-#include "robotModel.h"
+#include "poly_ros/obstacles.h"
 //#include "poly_ros/Num.h"
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 
-double p1, p2, p3, p4;
-double left_caterpillar_width, right_caterpillar_width, left_caterpillar_length, right_caterpillar_lenght;
-double distance_between_caterpillar, caterpillar_offset;
-double lidar_x, lidar_y, lidar_offset_x, lidar_offset_y, error_x, error_y;
-double w_x, w_y, s_x, s_y, r, l, q;
-
 int algorithm, pos_x, pos_y;
 int moveLocalCoordinates, range1, range2, zero;
 double distinction;
-double min_distance;
 
 int main(int argc, char **argv)
 {
@@ -42,10 +35,7 @@ int main(int argc, char **argv)
     nhPrivate.param("distinction", distinction, 0.2);
     nhPrivate.param("range1", range1, 50);
     nhPrivate.param("range2", range2, 310);
-    nhPrivate.param("min_distance", min_distance,  0.45);
     nhPrivate.param("zero", zero, 0);
-	
-	nhPrivate.param("p1", p1, 0.0);
 	
     ROS_INFO("movee=%d", algorithm);
 
@@ -181,7 +171,6 @@ int main(int argc, char **argv)
 			
 			//взависимости от полученного действия рассчитаем упраляющее воздействие на шасси 			
 			control = controlAction(algorithm, currentAction, local_angle_to_target);
-			//ROS_INFO("TTTTTTTTTTTTTTTTT %0.3f %0.3f", (float)p1, (float)temp);
 			
 			//получив конкретное действие для достижения заданой цели, подадим роботу команды на шасси, чтобы он начал(или закончил) движение
 			updateRCfromAction(algorithm, control, currentAction,rc);

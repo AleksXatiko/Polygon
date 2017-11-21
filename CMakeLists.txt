@@ -44,6 +44,7 @@ add_message_files(
     FILES
     obstacle.msg
     obstacles.msg
+	robotModel_parametrs.msg
 )
 
 generate_messages(
@@ -61,12 +62,12 @@ catkin_package(
 ## Declare a C++ executable
 add_executable(result src/result.cpp)
 add_executable(main src/main.cpp)
+add_executable(robotModel src/robotModel.cpp)
 ##add_executable(rpnodesub src/rpnodesub.cpp)
 
 add_library(computationMovement src/computationMovement.cpp)
 add_library(communication src/communication.cpp)
 add_library(power src/power.cpp)
-add_library(robotModel src/robotModel.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -81,7 +82,11 @@ target_link_libraries(result
 ##)
 
 target_link_libraries(main
-  ${catkin_LIBRARIES} computationMovement communication power robotModel
+  ${catkin_LIBRARIES} computationMovement communication power
+)
+
+target_link_libraries(robotModel
+  ${catkin_LIBRARIES} communication
 )
 
 target_link_libraries(power

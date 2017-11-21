@@ -6,6 +6,7 @@
 #include <geometry_msgs/QuaternionStamped.h>
 #include <tf/transform_datatypes.h>
 #include <fstream>
+#include "poly_ros/obstacles.h"
 
 bool obstructionClose = false;
 mavros_msgs::State current_state;
@@ -106,14 +107,14 @@ int send_attitude(mavros_msgs::Mavlink &rmsg)
     return 1;
 }
 
-void  chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
+void chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
 {
     obstructionClose = false;
 	float min = 6.0;
     int k = 0;
     for (int i = 0; i < mas->num; i++)
     {
-		if (mas->mass[i].angle1 < range1 || mas->mass[i].angle1 > range2 || mas->mass[i].angle2 < range1 || mas->mass[i].angle2 > range2 || mas->mass[i].angle1 > mas->mass[i].angle2)
+		if (obstacleCheck(mas, i, range1, range2, INFRONT))
 		{
 			if(mas->mass[i].min_distance < min)
 			{
@@ -125,6 +126,31 @@ void  chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
 	if (mas->mass[k].min_distance < min_distance)
 		obstructionClose = true;
     //ROS_INFO( "(number of obstacle: %d)",  mas->num);
+}
+
+
+
+//Проверка наличия препятствия в радиуе обзора
+bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, int range1, int range2, int side)
+{
+	switch(side)
+	{
+		case INFRONT:
+			return  mas->mass[index].angle1 < range1 || 
+					mas->mass[index].angle1 > range2 || 
+					mas->mass[index].angle2 < range1 || 
+					mas->mass[index].angle2 > range2 || 
+					mas->mass[index].angle1 > mas->mass[index].angle2;
+		case BEHIND:
+			return  mas->mass[index].angle1 > range1 && 
+					mas->mass[index].angle1 < range2 || 
+					mas->mass[index].angle2 > range1 && 
+					mas->mass[index].angle2 < range2 || 
+					mas->mass[index].angle1 < mas->mass[index].angle2;
+		case ASIDE:
+			break;
+		
+	}
 }
 
 /*void chatter(const poly_ros::Num::ConstPtr& a)

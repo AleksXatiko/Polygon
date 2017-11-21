@@ -15,6 +15,9 @@
 #include "poly_ros/Num.h"
 #include "ros/ros.h"
 
+#define INFRONT 1
+#define BEHIND 2
+#define ASIDE 3
 
 using namespace mavros;
 using namespace mavconn;
@@ -48,3 +51,6 @@ int send_attitude(mavros_msgs::Mavlink &rmsg);
 void chatterCallback(const poly_ros::obstacles::ConstPtr& mas); //new
 
 void chatter(const poly_ros::Num::ConstPtr& a);
+
+//Проверка наличия препятствия в радиуе обзора
+bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, int range1, int range2, int side);
