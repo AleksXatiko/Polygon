@@ -7,6 +7,7 @@
 #include <tf/transform_datatypes.h>
 #include <fstream>
 #include "poly_ros/obstacles.h"
+#include "poly_ros/robotModel_parametrs.h"
 
 bool obstructionClose = false;
 mavros_msgs::State current_state;
@@ -128,7 +129,10 @@ void chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
     //ROS_INFO( "(number of obstacle: %d)",  mas->num);
 }
 
-
+void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs)
+{
+	ROS_INFO("PARAMETR 0!!! %0.3f", (float)parametrs->parametr[0]);
+}
 
 //Проверка наличия препятствия в радиуе обзора
 bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, int range1, int range2, int side)

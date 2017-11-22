@@ -1,1 +1,1 @@
-double64[] parametr
+float64[] parametr

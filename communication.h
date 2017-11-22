@@ -11,9 +11,9 @@
 #include <mavros/mavlink_diag.h>
 #include <mavconn/interface.h>
 #include "poly_ros/obstacles.h"
-#include "robotModel.h"
 #include "poly_ros/Num.h"
 #include "ros/ros.h"
+#include "poly_ros/robotModel_parametrs.h"
 
 #define INFRONT 1
 #define BEHIND 2
@@ -50,7 +50,9 @@ int send_attitude(mavros_msgs::Mavlink &rmsg);
 
 void chatterCallback(const poly_ros::obstacles::ConstPtr& mas); //new
 
-void chatter(const poly_ros::Num::ConstPtr& a);
+void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs);
+
+//void chatter(const poly_ros::Num::ConstPtr& a);
 
 //Проверка наличия препятствия в радиуе обзора
 bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, int range1, int range2, int side);

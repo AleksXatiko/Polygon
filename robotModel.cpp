@@ -1,35 +1,15 @@
-#include "robotModel.h"
+#include <ros/ros.h>
+#include <cmath>
+#include "poly_ros/robotModel_parametrs.h"
+
+using namespace std;
+using namespace poly_ros;
 
 double p1, p2, p3, p4;
 double left_caterpillar_width, right_caterpillar_width, left_caterpillar_length, right_caterpillar_lenght;
 double distance_between_caterpillar, caterpillar_offset;
 double lidar_x, lidar_y, error_x, error_y;
 double w_x, w_y, s_x, s_y, r, l, q, lidar_offset_x, lidar_offset_y;
-
-int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "robotModel");
-    ros::NodeHandle nhPr("~");
-
-	nhPr.param("p1", p1, 7.0);
-	nhPr.param("p2", p2, 7.0);
-	nhPr.param("p3", p3, 7.0);
-	nhPr.param("p4", p4, 7.0);
-	
-	ros::NodeHandle nh;
-	chatter_pub = nh.advertise<robotModel_parametrs>("parametrs", 1000);
-	ros::spin(); 
-	
-	ROS_INFO("ASDASDASDASDASDasDADASSDASd");
-	double p[2];
-	p[0] = p1;
-	p[1] = p2;
-	poly_ros::robotModel_parametrs parametrs;
-	parametrs.parametr = p;
-	chatter_pub.publish(parametrs);
-	
-	return 0;
-}
 
 double GetW_X(double x1, double x2, double dx) //находим расстояние от центра робота до центров гусениц по оси X
 {
@@ -90,4 +70,30 @@ double Get_Safety_Tank_Zone(double w_x, double x1, double x2, double p2, double 
 double Safety_Angle(double lid_y, double S, double lid_x, double c_x, double c_y) // общая формула для нахождения углов зоны безопасного движения вперед и назад
 {
 	return atan((lid_x + c_x)/(lid_y + S + c_y)) * 180/M_PI;
+}
+
+int main(int argc, char **argv)
+{
+	ros::init(argc, argv, "robotModel");
+    ros::NodeHandle nhPr("~");
+	ros::Publisher robot_pub;
+
+	nhPr.param("p1", p1, 7.0);
+	nhPr.param("p2", p2, 7.0);
+	nhPr.param("p3", p3, 7.0);
+	nhPr.param("p4", p4, 7.0);
+	
+	ros::NodeHandle nh;
+	robot_pub = nh.advertise<robotModel_parametrs>("robotModel_parametrs", 1000);
+	
+	poly_ros::robotModel_parametrs parametrs;
+	vector<double> p(2);
+	p[0] = p1;
+	p[1] = p2;
+	parametrs.parametr = p;
+	robot_pub.publish(parametrs);
+	
+	ros::spin(); 
+	
+	return 0;
 }

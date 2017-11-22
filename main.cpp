@@ -51,6 +51,8 @@ int main(int argc, char **argv)
             ("mavros/state", 10, state_cb);
 			
     ros::Subscriber sub = nh.subscribe("obstacles" , 1000, chatterCallback);  //new new new
+	
+	ros::Subscriber subs = nh.subscribe("robotModel_parametrs", 1000, GetData); //UUUUUUUU
 			
     //ros::Subscriber subs = nh.subscribe("Num", 1000, &chatter);
 	//«арегистрируемс€ в качестве паблишера дл€ топика, который передаЄт  центральный сервер
