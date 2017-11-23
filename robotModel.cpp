@@ -5,11 +5,12 @@
 using namespace std;
 using namespace poly_ros;
 
-double p1, p2, p3, p4;
+double p1, p2, p3, p4, turn_mode;
 double left_caterpillar_width, right_caterpillar_width, left_caterpillar_length, right_caterpillar_lenght;
 double distance_between_caterpillar, caterpillar_offset;
 double lidar_x, lidar_y, error_x, error_y;
 double w_x, w_y, s_x, s_y, r, l, q, lidar_offset_x, lidar_offset_y;
+ros::Publisher robot_pub;
 
 double GetW_X(double x1, double x2, double dx) //находим расстояние от центра робота до центров гусениц по оси X
 {
@@ -67,7 +68,7 @@ double Get_Safety_Tank_Zone(double w_x, double x1, double x2, double p2, double 
 		return d4;
 }
 
-double Safety_Angle(double lid_y, double S, double lid_x, double c_x, double c_y) // общая формула для нахождения углов зоны безопасного движения вперед и назад
+double Get_Safety_Angle(double lid_y, double S, double lid_x, double c_x, double c_y) // общая формула для нахождения углов зоны безопасного движения вперед и назад
 {
 	return atan((lid_x + c_x)/(lid_y + S + c_y)) * 180/M_PI;
 }
@@ -76,24 +77,51 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "robotModel");
     ros::NodeHandle nhPr("~");
-	ros::Publisher robot_pub;
 
-	nhPr.param("p1", p1, 7.0);
-	nhPr.param("p2", p2, 7.0);
-	nhPr.param("p3", p3, 7.0);
-	nhPr.param("p4", p4, 7.0);
+	nhPr.param("p1", p1, 4.0);
+	nhPr.param("p2", p2, 4.5);
+	nhPr.param("p3", p3, 4.5);
+	nhPr.param("p4", p4, 3.0);
+	nhPr.param("left_caterpillar_width", left_caterpillar_width, 2.8);
+	nhPr.param("right_caterpillar_width", right_caterpillar_width, 2.8);
+	nhPr.param("left_caterpillar_length", left_caterpillar_length, 28);
+	nhPr.param("right_caterpillar_lenght", right_caterpillar_lenght, 28.0);
+	nhPr.param("distance_between_caterpillar", distance_between_caterpillar, 8.5);
+	nhPr.param("caterpillar_offset", caterpillar_offset, 0.0);
+	nhPr.param("lidar_x", lidar_x, 10.0);
+	nhPr.param("lidar_y", lidar_y, 10.0);
+	nhPr.param("min_distance", min_distance, 0.45);
+	nhPr.param("turn_mode", turn_mode, 1.0); 
+	nhPr.param("error_x", error_x, 1.0); 
+	nhPr.param("error_y", error_y, 1.0); 
+	
+	double lidar_rx = Get_Lidar_Right_X(p4, left_caterpillar_width, right_caterpillar_width, distance_between_caterpillar, p2, lidar_x);
+	double lidar_by = Get_Lidar_Back_Y(p1, left_caterpillar_length, caterpillar_offset, p3, lidar_y);
+	double range1 = Get_Safety_Angle(lidar_y, min_distance, lidar_x, error_x, error_y);
+	double range2 = Get_Safety_Angle(lidar_y, min_distance, lidar_rx, error_x, error_y);
+	double range3 = Get_Safety_Angle(lidar_by, min_distance, lidar_x, error_x, error_y);
+	double range4 = Get_Safety_Angle(lidar_by, min_distance, lidar_rx, error_x, error_y);
 	
 	ros::NodeHandle nh;
 	robot_pub = nh.advertise<robotModel_parametrs>("robotModel_parametrs", 1000);
 	
 	poly_ros::robotModel_parametrs parametrs;
-	vector<double> p(2);
-	p[0] = p1;
-	p[1] = p2;
+	vector<double> p(6);
+	p[0] = range1;
+	p[1] = range2;
+	p[2] = range3;
+	p[3] = range4;
+	p[4] = min_distance;
+	p[5] = turn_mode;
 	parametrs.parametr = p;
-	robot_pub.publish(parametrs);
 	
-	ros::spin(); 
+	ros::Rate rate(2.0);
+	while (ros::ok())
+	{
+		robot_pub.publish(parametrs);
+		ros::spinOnce(); 
+		rate.sleep();
+	}
 	
 	return 0;
 }

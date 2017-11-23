@@ -12,8 +12,7 @@
 bool obstructionClose = false;
 mavros_msgs::State current_state;
 int moveLocalCoordinates;
-int range1, range2;
-double distinction, min_distance; 
+double distinction, range1, range2, range3, range4, min_distance, turn_mode; 
 
 //Callback-функци€ - приЄмник текущего состо€ни€ PixHawk контроллера
 void state_cb(const mavros_msgs::State::ConstPtr& msg)
@@ -131,7 +130,13 @@ void chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
 
 void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs)
 {
-	ROS_INFO("PARAMETR 0!!! %0.3f", (float)parametrs->parametr[0]);
+	range1 = parametrs->parametr[0];
+	range2 = parametrs->parametr[1];
+	range3 = parametrs->parametr[2];
+	range4 = parametrs->parametr[3];
+	min_distance = parametrs->parametr[4];
+	turn_mode = parametrs->parametr[5];
+	ROS_INFO("EEEEEEEEEEE %0.3f %0.3f %0.3f %0.3f", (float)range1, (float)range2, (float)range3, (float)range4);
 }
 
 //Проверка наличия препятствия в радиуе обзора

@@ -35,6 +35,7 @@ int main(int argc, char **argv)
     nhPrivate.param("distinction", distinction, 0.2);
     nhPrivate.param("range1", range1, 50);
     nhPrivate.param("range2", range2, 310);
+	nhPrivate.param("min_distance", min_distance, 0.45);
     nhPrivate.param("zero", zero, 0);
 	
     ROS_INFO("movee=%d", algorithm);
