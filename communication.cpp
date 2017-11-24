@@ -12,7 +12,7 @@
 bool obstructionClose = false;
 mavros_msgs::State current_state;
 int moveLocalCoordinates;
-double distinction, range1, range2, range3, range4, min_distance, turn_mode; 
+double distinction, range1, range2, range3, range4, min_distance, turn_mode, radius, distance, angle; 
 
 //Callback-функция - приёмник текущего состояния PixHawk контроллера
 void state_cb(const mavros_msgs::State::ConstPtr& msg)
@@ -136,6 +136,9 @@ void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs)
 	range4 = parametrs->parametr[3];
 	min_distance = parametrs->parametr[4];
 	turn_mode = parametrs->parametr[5];
+	radius = parametrs->parametr[6];
+	distance = parametrs->parametr[7];
+	angle = parametrs->parametr[8];
 	ROS_INFO("EEEEEEEEEEE %0.3f %0.3f %0.3f %0.3f", (float)range1, (float)range2, (float)range3, (float)range4);
 }
 

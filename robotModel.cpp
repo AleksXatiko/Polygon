@@ -2,6 +2,10 @@
 #include <cmath>
 #include "poly_ros/robotModel_parametrs.h"
 
+#define FIXED_LEFT_CATERPILLAR 1;
+#define FIXED_RIGHT_CATERPILLAR 2;
+#define TANK_TURN 3;
+
 using namespace std;
 using namespace poly_ros;
 
@@ -9,8 +13,17 @@ double p1, p2, p3, p4, turn_mode;
 double left_caterpillar_width, right_caterpillar_width, left_caterpillar_length, right_caterpillar_lenght;
 double distance_between_caterpillar, caterpillar_offset;
 double lidar_x, lidar_y, error_x, error_y;
-double w_x, w_y, s_x, s_y, r, l, q, lidar_offset_x, lidar_offset_y;
 ros::Publisher robot_pub;
+
+double CatCenter_LidCenter_Angle(double w_x, double w_y, double lidar_offset_x, double lidar_offset_y, double dist)
+{
+	return acos(-(w_x + lidar_offset_x) / dist) * 180/M_PI;
+}
+
+double CatCenter_to_LidCenter(double w_x, double w_y, double lidar_offset_x, double lidar_offset_y)
+{
+	return sqrt(pow(w_x + lidar_offset_x, 2) + pow(w_y - lidar_offset_y, 2));
+}
 
 double GetW_X(double x1, double x2, double dx) //находим расстояние от центра робота до центров гусениц по оси X
 {
@@ -42,30 +55,33 @@ double Get_Lidar_Back_Y(double p1, double y1, double dy, double p3, double lid_y
 	return p1 + y1 + dy + p3 - lid_y;
 }
 
-double Get_Safety_Zone(double w_x, double x, double p4, double c_x, double y, double dy, double p1, double p3, double c_y)	//находим наибольшую диагональ от центра лидара до угла охватываюбщего прямоугольника для правой или левой стороны. это требуется для разворота с фиксированной гусеницей 
+double Get_Safety_Zone(double w_x, double x, double p, double c_x, double y, double dy, double p1, double p3, double c_y)	//находим наибольшую диагональ от центра лидара до угла охватываюбщего прямоугольника для правой или левой стороны. это требуется для разворота с фиксированной гусеницей 
 {
-	double d1 = sqrt(pow(2*w_x + x/2 + p4 + c_x, 2) + pow(y/2 + abs(dy) + p1 + c_y, 2));
-	double d2 = sqrt(pow(2*w_x + x/2 + p4 + c_x, 2) + pow(y/2 + abs(dy) + p3 + c_y, 2));
-	if (d1 > d2)
-		return d1;
-	else 
-		return d2;
+	double d[2];
+	d[0] = sqrt(pow(2*w_x + x/2 + p + c_x, 2) + pow(y/2 + abs(dy) + p1 + c_y, 2));
+	d[1] = sqrt(pow(2*w_x + x/2 + p + c_x, 2) + pow(y/2 + abs(dy) + p3 + c_y, 2));
+	return Get_Max(d, 2);
 }
 
 double Get_Safety_Tank_Zone(double w_x, double x1, double x2, double p2, double c_x, double y1, double y2, double w_y, double p1, double p3, double p4, double c_y)	//находим наибольшую диагональ от центра лидара до угла охватываюбщего прямоугольника для правой и левой стороны. Это требуется для танкового разворота 
 {
-	double d1 = sqrt(pow(w_x + x2/2 + p2 + c_x, 2) + pow(y2/2 + w_y + p1 + c_y, 2));
-	double d2 = sqrt(pow(w_x + x2/2 + p2 + c_x, 2) + pow(y2/2 + w_y + p3 + c_y, 2));
-	double d3 = sqrt(pow(w_x + x1/2 + p4 + c_x, 2) + pow(y1/2 + w_y + p1 + c_y, 2));
-	double d4 = sqrt(pow(w_x + x1/2 + p4 + c_x, 2) + pow(y1/2 + w_y + p3 + c_y, 2));
-	if (d1 > d2 && d1 > d3 && d1 > d4)
-		return d1;
-	else if (d2 > d3 && d2 > d4)
-		return d2;
-	else if (d3 > d4)
-		return d3;
-	else
-		return d4;
+	double d[4];
+	d[0] = sqrt(pow(w_x + x2/2 + p2 + c_x, 2) + pow(y2/2 + w_y + p1 + c_y, 2));
+	d[1] = sqrt(pow(w_x + x2/2 + p2 + c_x, 2) + pow(y2/2 + w_y + p3 + c_y, 2));
+	d[2] = sqrt(pow(w_x + x1/2 + p4 + c_x, 2) + pow(y1/2 + w_y + p1 + c_y, 2));
+	d[3] = sqrt(pow(w_x + x1/2 + p4 + c_x, 2) + pow(y1/2 + w_y + p3 + c_y, 2));
+	return Get_Max(d, 4);
+}
+
+double Get_Max(double[] data, int length)
+{
+	double max = -1;
+	for (int i = 0; i < length, i++)
+	{
+		if (data[i] > max)
+			max = data[i];
+	}
+	return max;
 }
 
 double Get_Safety_Angle(double lid_y, double S, double lid_x, double c_x, double c_y) // общая формула для нахождения углов зоны безопасного движения вперед и назад
@@ -102,17 +118,47 @@ int main(int argc, char **argv)
 	double range3 = Get_Safety_Angle(lidar_by, min_distance, lidar_x, error_x, error_y);
 	double range4 = Get_Safety_Angle(lidar_by, min_distance, lidar_rx, error_x, error_y);
 	
+	double w_x = GetW_X(left_caterpillar_width, right_caterpillar_width, distance_between_caterpillar);
+	double w_y = GetW_Y(caterpillar_offset);
+	double s_x = GetS_X(lidar_x, left_caterpillar_width, w_x, p4);
+	double s_y = GetS_Y(lidar_y, left_caterpillar_length, w_y, p1);
+	
+	double radius;
+	double distance;
+	double angle;
+	switch ((int)turn_mode)
+	{
+		case FIXED_LEFT_CATERPILLAR:
+			radius = Get_Safety_Zone(w_x, right_caterpillar_width, p2, error_x, left_caterpillar_length, caterpillar_offset, p1, p3, error_y);
+			distance = CatCenter_to_LidCenter(w_x, w_y, lidar_offset_x, lidar_offset_y);
+			angle = CatCenter_LidCenter_Angle(w_x, w_y, lidar_offset_x, lidar_offset_y, distance);
+			break;
+		case FIXED_RIGHT_CATERPILLAR:
+			radius = Get_Safety_Zone(w_x, left_caterpillar_width, p4, error_x, right_caterpillar_lenght, caterpillar_offset, p1, p3, error_y);
+			distance = CatCenter_to_LidCenter(-w_x, -w_y, -lidar_offset_x, lidar_offset_y);
+			angle = CatCenter_LidCenter_Angle(-w_x, -w_y, -lidar_offset_x, lidar_offset_y, distance);
+			break;
+		case TANK_TURN:
+			radius = Get_Safety_Tank_Zone(w_x, left_caterpillar_width, right_caterpillar_width, p2, error_x, left_caterpillar_length, right_caterpillar_lenght, w_y, p1, p3, p4, error_y);
+			distance = CatCenter_to_LidCenter(0, 0, lidar_offset_x, lidar_offset_y);
+			angle = CatCenter_LidCenter_Angle(0, 0, lidar_offset_x, lidar_offset_y, distance);
+			break;
+	}
+	
 	ros::NodeHandle nh;
 	robot_pub = nh.advertise<robotModel_parametrs>("robotModel_parametrs", 1000);
 	
 	poly_ros::robotModel_parametrs parametrs;
-	vector<double> p(6);
+	vector<double> p(9);
 	p[0] = range1;
 	p[1] = range2;
 	p[2] = range3;
 	p[3] = range4;
 	p[4] = min_distance;
 	p[5] = turn_mode;
+	p[6] = radius;
+	p[7] = distance;
+	p[8] = angle;
 	parametrs.parametr = p;
 	
 	ros::Rate rate(2.0);
