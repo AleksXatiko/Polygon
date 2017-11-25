@@ -15,10 +15,6 @@
 #include "ros/ros.h"
 #include "poly_ros/robotModel_parametrs.h"
 
-#define INFRONT 1
-#define BEHIND 2
-#define ASIDE 3
-
 using namespace mavros;
 using namespace mavconn;
 using namespace mavlink;
@@ -55,4 +51,4 @@ void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs);
 //void chatter(const poly_ros::Num::ConstPtr& a);
 
 //Проверка наличия препятствия в радиуе обзора
-bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, int range1, int range2, int side);
+bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double range1, double range2, int side);

@@ -2,18 +2,29 @@
 #include <cmath>
 #include "poly_ros/robotModel_parametrs.h"
 
-#define FIXED_LEFT_CATERPILLAR 1;
-#define FIXED_RIGHT_CATERPILLAR 2;
-#define TANK_TURN 3;
+#define FIXED_LEFT_CATERPILLAR 1
+#define FIXED_RIGHT_CATERPILLAR 2
+#define TANK_TURN 3
 
 using namespace std;
 using namespace poly_ros;
 
 double p1, p2, p3, p4, turn_mode;
 double left_caterpillar_width, right_caterpillar_width, left_caterpillar_length, right_caterpillar_lenght;
-double distance_between_caterpillar, caterpillar_offset;
-double lidar_x, lidar_y, error_x, error_y;
+double distance_between_caterpillar, caterpillar_offset, lidar_offset_x, lidar_offset_y;
+double lidar_x, lidar_y, error_x, error_y, min_distance;
 ros::Publisher robot_pub;
+
+double Get_Max(double *data, int length)
+{
+	double max = -1;
+	for (int i = 0; i < length; i++)
+	{
+		if (data[i] > max)
+			max = data[i];
+	}
+	return max;
+}
 
 double CatCenter_LidCenter_Angle(double w_x, double w_y, double lidar_offset_x, double lidar_offset_y, double dist)
 {
@@ -22,7 +33,7 @@ double CatCenter_LidCenter_Angle(double w_x, double w_y, double lidar_offset_x, 
 
 double CatCenter_to_LidCenter(double w_x, double w_y, double lidar_offset_x, double lidar_offset_y)
 {
-	return sqrt(pow(w_x + lidar_offset_x, 2) + pow(w_y - lidar_offset_y, 2));
+	return sqrt(pow(w_x + lidar_offset_x, 2) + pow(lidar_offset_y - w_y, 2));
 }
 
 double GetW_X(double x1, double x2, double dx) //находим расстояние от центра робота до центров гусениц по оси X
@@ -73,17 +84,6 @@ double Get_Safety_Tank_Zone(double w_x, double x1, double x2, double p2, double 
 	return Get_Max(d, 4);
 }
 
-double Get_Max(double[] data, int length)
-{
-	double max = -1;
-	for (int i = 0; i < length, i++)
-	{
-		if (data[i] > max)
-			max = data[i];
-	}
-	return max;
-}
-
 double Get_Safety_Angle(double lid_y, double S, double lid_x, double c_x, double c_y) // общая формула для нахождения углов зоны безопасного движения вперед и назад
 {
 	return atan((lid_x + c_x)/(lid_y + S + c_y)) * 180/M_PI;
@@ -94,29 +94,29 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "robotModel");
     ros::NodeHandle nhPr("~");
 
-	nhPr.param("p1", p1, 4.0);
-	nhPr.param("p2", p2, 4.5);
-	nhPr.param("p3", p3, 4.5);
-	nhPr.param("p4", p4, 3.0);
-	nhPr.param("left_caterpillar_width", left_caterpillar_width, 2.8);
-	nhPr.param("right_caterpillar_width", right_caterpillar_width, 2.8);
-	nhPr.param("left_caterpillar_length", left_caterpillar_length, 28);
-	nhPr.param("right_caterpillar_lenght", right_caterpillar_lenght, 28.0);
-	nhPr.param("distance_between_caterpillar", distance_between_caterpillar, 8.5);
+	nhPr.param("p1", p1, 0.04);
+	nhPr.param("p2", p2, 0.045);
+	nhPr.param("p3", p3, 0.045);
+	nhPr.param("p4", p4, 0.03);
+	nhPr.param("left_caterpillar_width", left_caterpillar_width, 0.028);
+	nhPr.param("right_caterpillar_width", right_caterpillar_width, 0.028);
+	nhPr.param("left_caterpillar_length", left_caterpillar_length, 0.28);
+	nhPr.param("right_caterpillar_lenght", right_caterpillar_lenght, 0.28);
+	nhPr.param("distance_between_caterpillar", distance_between_caterpillar, 0.085);
 	nhPr.param("caterpillar_offset", caterpillar_offset, 0.0);
-	nhPr.param("lidar_x", lidar_x, 10.0);
-	nhPr.param("lidar_y", lidar_y, 10.0);
+	nhPr.param("lidar_x", lidar_x, 0.1);
+	nhPr.param("lidar_y", lidar_y, 0.1);
 	nhPr.param("min_distance", min_distance, 0.45);
 	nhPr.param("turn_mode", turn_mode, 1.0); 
-	nhPr.param("error_x", error_x, 1.0); 
-	nhPr.param("error_y", error_y, 1.0); 
+	nhPr.param("error_x", error_x, 0.02); 
+	nhPr.param("error_y", error_y, 0.02); 
 	
 	double lidar_rx = Get_Lidar_Right_X(p4, left_caterpillar_width, right_caterpillar_width, distance_between_caterpillar, p2, lidar_x);
 	double lidar_by = Get_Lidar_Back_Y(p1, left_caterpillar_length, caterpillar_offset, p3, lidar_y);
-	double range1 = Get_Safety_Angle(lidar_y, min_distance, lidar_x, error_x, error_y);
-	double range2 = Get_Safety_Angle(lidar_y, min_distance, lidar_rx, error_x, error_y);
-	double range3 = Get_Safety_Angle(lidar_by, min_distance, lidar_x, error_x, error_y);
-	double range4 = Get_Safety_Angle(lidar_by, min_distance, lidar_rx, error_x, error_y);
+	double angle1 = Get_Safety_Angle(lidar_y, min_distance, lidar_x, error_x, error_y);
+	double angle2 = 360 - Get_Safety_Angle(lidar_y, min_distance, lidar_rx, error_x, error_y);
+	double angle3 = 180 - Get_Safety_Angle(lidar_by, min_distance, lidar_x, error_x, error_y);
+	double angle4 = 180 + Get_Safety_Angle(lidar_by, min_distance, lidar_rx, error_x, error_y);
 	
 	double w_x = GetW_X(left_caterpillar_width, right_caterpillar_width, distance_between_caterpillar);
 	double w_y = GetW_Y(caterpillar_offset);
@@ -130,18 +130,18 @@ int main(int argc, char **argv)
 	{
 		case FIXED_LEFT_CATERPILLAR:
 			radius = Get_Safety_Zone(w_x, right_caterpillar_width, p2, error_x, left_caterpillar_length, caterpillar_offset, p1, p3, error_y);
-			distance = CatCenter_to_LidCenter(w_x, w_y, lidar_offset_x, lidar_offset_y);
-			angle = CatCenter_LidCenter_Angle(w_x, w_y, lidar_offset_x, lidar_offset_y, distance);
+			distance = CatCenter_to_LidCenter(w_x, w_y, s_x, s_y);
+			angle = CatCenter_LidCenter_Angle(w_x, w_y, s_x, s_y, distance);
 			break;
 		case FIXED_RIGHT_CATERPILLAR:
 			radius = Get_Safety_Zone(w_x, left_caterpillar_width, p4, error_x, right_caterpillar_lenght, caterpillar_offset, p1, p3, error_y);
-			distance = CatCenter_to_LidCenter(-w_x, -w_y, -lidar_offset_x, lidar_offset_y);
-			angle = CatCenter_LidCenter_Angle(-w_x, -w_y, -lidar_offset_x, lidar_offset_y, distance);
+			distance = CatCenter_to_LidCenter(-w_x, -w_y, -s_x, s_y);
+			angle = CatCenter_LidCenter_Angle(-w_x, -w_y, -s_x, s_y, distance);
 			break;
 		case TANK_TURN:
 			radius = Get_Safety_Tank_Zone(w_x, left_caterpillar_width, right_caterpillar_width, p2, error_x, left_caterpillar_length, right_caterpillar_lenght, w_y, p1, p3, p4, error_y);
-			distance = CatCenter_to_LidCenter(0, 0, lidar_offset_x, lidar_offset_y);
-			angle = CatCenter_LidCenter_Angle(0, 0, lidar_offset_x, lidar_offset_y, distance);
+			distance = CatCenter_to_LidCenter(0, 0, s_x, s_y);
+			angle = CatCenter_LidCenter_Angle(0, 0, s_x, s_y, distance);
 			break;
 	}
 	
@@ -150,10 +150,10 @@ int main(int argc, char **argv)
 	
 	poly_ros::robotModel_parametrs parametrs;
 	vector<double> p(9);
-	p[0] = range1;
-	p[1] = range2;
-	p[2] = range3;
-	p[3] = range4;
+	p[0] = angle1;
+	p[1] = angle2;
+	p[2] = angle3;
+	p[3] = angle4;
 	p[4] = min_distance;
 	p[5] = turn_mode;
 	p[6] = radius;

@@ -16,7 +16,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 
-int algorithm, pos_x, pos_y;
+int algorithm, pos_x, pos_y, currentAction;
 int moveLocalCoordinates, range1, range2, zero;
 double distinction;
 
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     nhPrivate.param("distinction", distinction, 0.2);
     nhPrivate.param("range1", range1, 50);
     nhPrivate.param("range2", range2, 310);
-	nhPrivate.param("min_distance", min_distance, 0.45);
+	//nhPrivate.param("min_distance", min_distance, 0.45);
     nhPrivate.param("zero", zero, 0);
 	
     ROS_INFO("movee=%d", algorithm);
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 			if(send_attitude(rmsg)) to_gcs.publish(rmsg);
 
 		double local_angle_to_target; //текущий угол относително заданной цели
-		int currentAction = ACTION_STAY; //текущее положение робота:стоит
+		currentAction = ACTION_STAY; //текущее положение робота:стоит
 		double control = 0.0;//управляющее воздействие
 		//algorithm = 3; //выбранный алгоритм движения
 		//ROS_INFO("ALGORITHM %d", algorithm);
