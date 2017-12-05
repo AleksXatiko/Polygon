@@ -14,6 +14,7 @@
 #include "poly_ros/Num.h"
 #include "ros/ros.h"
 #include "poly_ros/robotModel_parametrs.h"
+#include "poly_ros/target.h"
 
 using namespace mavros;
 using namespace mavconn;
@@ -48,7 +49,9 @@ void chatterCallback(const poly_ros::obstacles::ConstPtr& mas); //new
 
 void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs);
 
+void test(const poly_ros::target::ConstPtr& msg);
+
 //void chatter(const poly_ros::Num::ConstPtr& a);
 
 //Проверка наличия препятствия в радиуе обзора
-bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double range1, double range2, int side);
+bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double range1, double range2, int action, double dist, double rad, double ang);

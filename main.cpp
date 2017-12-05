@@ -53,6 +53,8 @@ int main(int argc, char **argv)
 			
     ros::Subscriber sub = nh.subscribe("obstacles" , 1000, chatterCallback);  //new new new
 	
+	ros::Subscriber test_sub = nh.subscribe("target" , 1000, test);
+	
 	ros::Subscriber subs = nh.subscribe("robotModel_parametrs", 1000, GetData); //UUUUUUUU
 			
     //ros::Subscriber subs = nh.subscribe("Num", 1000, &chatter);

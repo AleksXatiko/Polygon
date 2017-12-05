@@ -21,11 +21,10 @@ ros::Publisher chatter_pub;
 отыскивает разрыв, начиная с A[0]. Возвращает R0-угол, где впервые втретился разрыв, между A[R0] и A[R0+1].
 В противном случае вернуть признак отсутствия разрыва (NULL)
 */
-int FirstBreak(float C[360], float *min1_distance, int *min_angle)
+int FirstBreak(float C[360], float *min1_distance)
 {
 	int i = 0;
 	*min1_distance = C[0];  //минимальная удаленность препятствия
-	*min_angle = 0;
 	int R0 = 0;   //Ro - первый разрыв
 				  //пока не найден разрыв или не кончатся все элементы
 	while (R0 == zero && i < circle)  //Будем искать пока не найден разрыв (Ro = 0) или пока не прошли весь круг
@@ -34,9 +33,8 @@ int FirstBreak(float C[360], float *min1_distance, int *min_angle)
 		{
 			    if (C[i] < *min1_distance) //Ищем минимальную удаленность 
 			    {
-					*min1_distance = C[i];
-					*min_angle = i;
-			    }
+				*min1_distance = C[i];
+			    };
 		}
 		else
 		{
@@ -60,17 +58,13 @@ int StudyData(float B[360])
 	int *angle1= new int[num];// Выделение памяти для массива
 	float *min = new float[num]; // Выделение памяти для массива
 	int *angle2= new int[num];// Выделение памяти для массива
-	int *angle_min = new int[num];// Выделение памяти для массива
 	int First_R0;  //Ro - первый разрыв
 	int R01;//Ro - первый разрыв
 	float min1_distance = 0.0;//минимальнаЯ удаленность препятствия
-	int min1_angle = 0; //угол до минимального расстояния
-	First_R0 = FirstBreak(B, &min1_distance, &min1_angle);
+	First_R0 = FirstBreak(B, &min1_distance);
 	R01 = First_R0 - 1;
 	float min11_distance = min1_distance;//минимальная удаленность препятствия
-	int min11_angle = min1_angle; //угол до минимального расстояния
 	float min_distance1;//минимальная удаленность препятствия
-	int angle3; //угол до минимального расстояния
 	int Ri = First_R0 + 1; //угл начала препятствия 
 	First_R0 = First_R0 + 1;// угл конца препятсвия
 	int NUL = 0; // признак отстуствия разрыва
@@ -79,23 +73,26 @@ int StudyData(float B[360])
 	if (First_R0 != zero)
 	{	
 		min_distance1 = B[First_R0 + 1];  //минимальнаЯ удаленность препятствия
-		angle3 = First_R0 + 1; //угол до минимальной удаленности
 		
 		while (First_R0 < circle)       //пока не найден круг
 		{
 			if (abs(B[First_R0] - B[First_R0 + 1]) <= error)//текущий элемент и следующий примерно равны, то будем считать, что это одно препятствие
 			{
 				NUL = 0;
+				if (B[First_R0] < min_distance1) //Ищем минимальную удаленность 
+				{
+					min_distance1 = B[First_R0];
+				};
 			}
 			else
 			{
 				NUL = 1;
+				if (B[First_R0] < min_distance1) //Ищем минимальную удаленность 
+				{
+					min_distance1 = B[First_R0];
+				};
 			}
-			if (B[First_R0] < min_distance1) //Ищем минимальную удаленность 
-			{
-				min_distance1 = B[First_R0];
-				angle3 = First_R0;
-			}
+
 
 			if (NUL == gap) // если есть разрыв
 			{
@@ -103,17 +100,15 @@ int StudyData(float B[360])
 				{
 				    if(abs(Ri-First_R0) > minLength) //если размер препятствия больше 2
 					{
-						angle1[quantityr_obstacles] = Ri; // запишем угол начала препятствия 
+						angle1[quantityr_obstacles] = Ri; // запишем угл начала препятствия 
 						min[quantityr_obstacles] = min_distance1;// запишем минимальную дистанцию 
-						angle_min[quantityr_obstacles] = angle3; //запишем угол до минимального расстояния
-						angle2[quantityr_obstacles] = First_R0;// запишем угол конца препятствия
+						angle2[quantityr_obstacles] = First_R0;// запишем угл конца препятствия
 						nomer[quantityr_obstacles] = quantityr_obstacles + 1; // запишем номер препятствия  
 						quantityr_obstacles = quantityr_obstacles + 1;// увеличим количество препятствий 
 					}
 					NUL = 0;
 					Ri = First_R0 + 1; 
 					min_distance1 = B[First_R0 + 1];	
-					angle3 = First_R0 + 1;
 				}
 			}
 			First_R0 = First_R0 + 1 ;
@@ -122,16 +117,14 @@ int StudyData(float B[360])
 		if (B[First_R0] < min_distance1) //Ищем минимальную удаленность 
 			{
 				min_distance1 = B[First_R0];
-				angle3 = First_R0;
 			};
 
 
 		if (((abs(B[359] - B[0])) > error) && (abs(B[359] - B[0]) != B[359])) //Есть разрыв  между А [360] и A[0?]
 		{
-			angle1[quantityr_obstacles] = Ri; // запишем угол начала препятствия
+			angle1[quantityr_obstacles] = Ri; // запишем угл начала препятствия
 			min[quantityr_obstacles] = min_distance1;// запишем минимальную дистанцию 
-			angle_min[quantityr_obstacles] = angle3; //запишем угол до минимального расстояния
-			angle2[quantityr_obstacles] = First_R0;// запишем угол конца препятствия
+			angle2[quantityr_obstacles] = First_R0;// запишем угл конца препятствия
 			nomer[quantityr_obstacles] = quantityr_obstacles + 1;// запишем номер препятствия 
 			quantityr_obstacles = quantityr_obstacles + 1;// увеличим количество препятствий 
 			Ri = 0;
@@ -141,37 +134,31 @@ int StudyData(float B[360])
 		if(Ri==zero)
 			{
 				min[quantityr_obstacles] = min_distance1;// запишем минимальную дистанцию 
-				angle_min[quantityr_obstacles] = angle3; //запишем угол до минимального расстояния
-				angle2[quantityr_obstacles] = First_R0;// запишем угол конца препятствия
+				angle2[quantityr_obstacles] = First_R0;// запишем угл конца препятствия
 			}
 		else
 			{
 				if (min11_distance > min_distance1) //Ищем максимальную удаленность 
-				{
 					min1_distance = min_distance1;
-					min1_angle = angle3;
-				}
 				min[quantityr_obstacles] = min11_distance; // запишем минимальную дистанцию 
-				angle_min[quantityr_obstacles] = min11_angle; //запишем угол до минимального расстояния
 				if (abs(B[359] - B[0]) == B[359])
 				    {
-						angle2[quantityr_obstacles] = 359; // запишем угол конца препятствия
+						angle2[quantityr_obstacles] = 359; // запишем угл конца препятствия
 				    }
 				    else
 				    {
-						angle2[quantityr_obstacles] = R01; // запишем угол конца препятствия
+						angle2[quantityr_obstacles] = R01; // запишем угл конца препятствия
 				    }
 			}
-			angle1[quantityr_obstacles] = Ri; // запишем угол начала препятствия
+			angle1[quantityr_obstacles] = Ri; // запишем угл начала препятствия
 			nomer[quantityr_obstacles] = quantityr_obstacles + 1; // запишем номер препятствия
 			quantityr_obstacles = quantityr_obstacles + 1;// увеличим количество препятствий 
 	}
 	else
 	{
-		angle1[quantityr_obstacles] = Ri; // запишем угол начала препятствия
+		angle1[quantityr_obstacles] = Ri; // запишем угл начала препятствия
 		min[quantityr_obstacles] = min1_distance;// запишем минимальную дистанцию
-		angle_min[quantityr_obstacles] = min1_angle; //запишем угол до минимального расстояния
-		angle2[quantityr_obstacles] = First_R0;// запишем угол конца препятствия
+		angle2[quantityr_obstacles] = First_R0;// запишем угл конца препятствия
 		nomer[quantityr_obstacles] = quantityr_obstacles + 1;// запишем номер препятствия 
 		quantityr_obstacles = quantityr_obstacles + 1;// увеличим количество препятствий 
 	}
@@ -192,18 +179,15 @@ int StudyData(float B[360])
 				angle2[number_obstacle - Flag] = angle1[number_obstacle + 1]; //увиличиваем длину препятствия
 				if (min[number_obstacle - Flag] > min[number_obstacle + 1]) // находим минимальную дистанцию
 				{
-					min[number_obstacle - Flag] = min[number_obstacle + 1];
-					angle_min[number_obstacle - Flag] = angle_min[number_obstacle + 1]; 
+					 min[number_obstacle - Flag] = min[number_obstacle + 1];
 				}
 				//смещяем элементы массива
 				angle1[number_obstacle + 1] = angle1[number_obstacle + 2];
 				angle2[number_obstacle + 1] = angle2[number_obstacle + 2];
 				min[number_obstacle + 1] = min[number_obstacle + 2];
-				angle_min[number_obstacle + 1] = angle_min[number_obstacle + 2];
 				angle1[number_obstacle + 2] = angle1[number_obstacle + 3];
 				angle2[number_obstacle + 2] = angle2[number_obstacle + 3];
 				min[number_obstacle + 2] = min[number_obstacle + 3];
-				angle_min[number_obstacle + 2] = angle_min[number_obstacle + 3];
 				if(number_obstacle < quantityr_obstacles - 2) // чтобы не выйти за предел массива 
 				{
 					number_obstacle = number_obstacle + 1;
@@ -234,7 +218,6 @@ int StudyData(float B[360])
 	    a[i].angle1 = angle1[i];
 	    a[i].angle2 = angle2[i];
 	    a[i].min_distance = min[i];
-		a[i].angle_min = angle_min[i];
 	//    ROS_INFO("(%d, %0.2f, %0.2f, %0.2f)", a[i].nomer, a[i].angle1, a[i].angle2, a[i].min_distance);
 	}
 	mas.mass = a; // публикуем данные опрепятствиях
@@ -260,7 +243,7 @@ void processLaserScan(const sensor_msgs::LaserScan::ConstPtr& msg)
 
 int main(int argc, char **argv)
 {	
-	ros::init (argc, argv, "findObstacles"); //инициализация узла
+	ros::init (argc, argv, "result"); //инициализация узла
 	ros::NodeHandle nh("~"); //объявление преерменной nh в пространстве имен NodeHandle
 	ros::Subscriber scanSub; //обьявляем узел result подписчиком
 	

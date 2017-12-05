@@ -44,6 +44,7 @@ add_message_files(
     FILES
     obstacle.msg
     obstacles.msg
+	target.msg
 	robotModel_parametrs.msg
 )
 
@@ -60,10 +61,10 @@ catkin_package(
   DEPENDS EIGEN3
 )
 ## Declare a C++ executable
-add_executable(result src/result.cpp)
+add_executable(findObstacles src/findObstacles.cpp)
 add_executable(main src/main.cpp)
 add_executable(robotModel src/robotModel.cpp)
-##add_executable(rpnodesub src/rpnodesub.cpp)
+add_executable(rpnodesub src/rpnodesub.cpp)
 
 add_library(computationMovement src/computationMovement.cpp)
 add_library(communication src/communication.cpp)
@@ -73,13 +74,13 @@ add_library(power src/power.cpp)
 ## same as for the library above
 # add_dependencies(directmav_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(result
+target_link_libraries(findObstacles
   ${catkin_LIBRARIES}
 )
 
-##target_link_libraries(rpnodesub
-##  ${catkin_LIBRARIES}
-##)
+target_link_libraries(rpnodesub
+  ${catkin_LIBRARIES}
+)
 
 target_link_libraries(main
   ${catkin_LIBRARIES} computationMovement communication power

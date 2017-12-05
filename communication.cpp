@@ -8,10 +8,11 @@
 #include <fstream>
 #include "poly_ros/obstacles.h"
 #include "poly_ros/robotModel_parametrs.h"
+#include "poly_ros/target.h"
 
-bool obstructionClose = false;
+bool obstructionClose = false, prevObstructionClose = false, mapControl = false;
 mavros_msgs::State current_state;
-int moveLocalCoordinates, currentAction, prevAction;
+int moveLocalCoordinates, currentAction, pos_x, pos_y;
 double distinction, angle1, angle2, angle3, angle4, min_distance, turn_mode, radius, distance, angle; 
 
 //Callback-функци€ - приЄмник текущего состо€ни€ PixHawk контроллера
@@ -40,8 +41,8 @@ void to_px_cb(const mavros_msgs::Mavlink::ConstPtr& rmsg)
         target_x = pos_ned.x;
         target_y = pos_ned.y;
         target_z = pos_ned.z;
-
-	target_set = 1;
+		target_set = 1;
+		mapControl = true;
 
         //ROS_INFO("target x,y=(%0.2f,%0.2f)", target_x, target_y);
     }
@@ -111,27 +112,41 @@ void chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
 {
     obstructionClose = false;
 	float min = 6.0;
-    int k = 0;
+    int k = -1;
     for (int i = 0; i < mas->num; i++)
     {
-		if (obstacleCheck(mas, i, angle1, angle2, currentAction))
+		if (obstacleCheck(mas, i, angle1, angle2, currentAction, distance, radius, angle))
 		{
-			if(mas->mass[i].min_distance < min)
+			if(mas->mass[i].min_distance < min || currentAction == ACTION_TURN_LEFT || currentAction == ACTION_TURN_RIGHT)
 			{
 				min = mas->mass[i].min_distance;
 				k = i;
 			}
 		}
+		//ROS_INFO("_________________________ Obstacle %d | Angle: %f | Dist: %0.3f", i, (float)mas->mass[i].angle_min, (float)mas->mass[i].min_distance);
     }
-	if (mas->mass[k].min_distance == 0.0)
+	if (currentAction == ACTION_TURN_LEFT || currentAction == ACTION_TURN_LEFT)
 	{
-		if (currentAction == ACTION_STAY)
+		if (k != -1)
 			obstructionClose = true;
-		else
-			obstructionClose = false;
 	}
-	else if (mas->mass[k].min_distance < min_distance)
-		obstructionClose = true;
+	else
+	{
+		if (mas->mass[k].min_distance < min_distance)
+			obstructionClose = true;
+		/*
+		if (mas->mass[k].min_distance == 0.0)
+		{
+			if (prevObstructionClose)
+				obstructionClose = true;
+		}
+		else if (mas->mass[k].min_distance < min_distance)
+			obstructionClose = true;
+		*/
+	}
+	
+	prevObstructionClose = obstructionClose;
+	//ROS_INFO("________________________INFO: PI: %0.6f", (float)M_PI);
     //ROS_INFO( "__STAY: %0.3f",  (float)mas->mass[k].min_distance);
 }
 
@@ -150,9 +165,21 @@ void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs)
 	//ROS_INFO("EEEEEEEEEEE %0.3f %0.3f %0.3f %0.3f", (float)min_distance, (float)radius, (float)distance, (float)angle);
 }
 
-//Проверка наличия препятствия в радиуе обзора
-bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double range1, double range2, int action)
+void test(const poly_ros::target::ConstPtr& msg)
 {
+	if (!mapControl && pos_x == 0 && pos_y == 0)
+	{
+		target_x = msg->x;
+		target_y = msg->y;
+		target_set = 1;
+		ROS_INFO("___________________G | %0.3f | %0.3f", msg->x, msg->y);
+	}
+}
+
+//Проверка наличия препятствия в радиуе обзора
+bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double range1, double range2, int action, double dist, double rad, double ang)
+{
+	double _min, d;
 	switch(action)
 	{
 		case ACTION_MOVE_FORWARD:
@@ -167,6 +194,11 @@ bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double r
 					mas->mass[index].angle2 > range1 && 
 					mas->mass[index].angle2 < range2 || 
 					mas->mass[index].angle1 < mas->mass[index].angle2;
+		case ACTION_TURN_LEFT:
+		case ACTION_TURN_RIGHT:
+			_min = mas->mass[index].min_distance;
+			d = sqrt(pow(dist, 2) + pow(_min, 2) - 2 * dist * _min * cos(ang - mas->mass[index].angle_min));
+			return (d < rad);
 		default:
 			return true;
 		

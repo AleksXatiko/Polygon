@@ -3,13 +3,14 @@
 	<arg name="regul" default="1" />
 	<arg name="x" default="0" />
 	<arg name="y" default="0" />
+	<arg name="angle" default="0" />
 	
 	<node pkg="mavros" type="gcs_bridge" name="gcs_bridge" required="false" output="log">
 		<param name="gcs_url" value="/dev/rfd900:57600" />
 	</node>
 
 	
-	<node pkg="poly_ros" type="result" name="result" output="screen" >
+	<node pkg="poly_ros" type="findObstacles" name="findObstacles" output="screen" >
 	<param name="error" value="0.20" />
 	<param name="degree" value="10.0" />
 	<param name="zero" value="0" />
@@ -26,7 +27,10 @@
 	<param name="algorithm" value="$(arg regul)" />
 	<param name="pos_x" value="$(arg x)" />
 	<param name="pos_y" value="$(arg y)" />
+	</node>
 	
+	<node pkg="poly_ros" type="rpnodesub" name="rpnodesub" required="false" output="screen">
+	<param name="angle" value="$(arg angle)" />
 	</node>
 	
 	<node pkg="poly_ros" type="robotModel" name="robotModel" output="screen" >
@@ -44,8 +48,8 @@
 	<param name="lidar_y" value="0.1" />
 	<param name="min_distance" value="0.3" />
 	<param name="turn_mode" value="1.0" /> 
-	<param name="error_x" value="0.02" /> 
-	<param name="error_y" value="0.02" /> 
+	<param name="error_x" value="0.04" /> 
+	<param name="error_y" value="0.04" /> 
 	</node>
 
 	<node pkg="mavros" type="mavros_node" name="mavros" required="false" clear_params="true" output="log">
