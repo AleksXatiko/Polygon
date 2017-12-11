@@ -24,28 +24,33 @@ struct obstacle_
   typedef obstacle_<ContainerAllocator> Type;
 
   obstacle_()
-    : nomer(0)
-    , angle1(0.0)
-    , angle2(0.0)
+    : begin_x(0.0)
+    , begin_y(0.0)
+    , end_x(0.0)
+    , end_y(0.0)
     , min_distance(0.0)  {
     }
   obstacle_(const ContainerAllocator& _alloc)
-    : nomer(0)
-    , angle1(0.0)
-    , angle2(0.0)
+    : begin_x(0.0)
+    , begin_y(0.0)
+    , end_x(0.0)
+    , end_y(0.0)
     , min_distance(0.0)  {
     }
 
 
 
-   typedef uint8_t _nomer_type;
-  _nomer_type nomer;
+   typedef float _begin_x_type;
+  _begin_x_type begin_x;
 
-   typedef float _angle1_type;
-  _angle1_type angle1;
+   typedef float _begin_y_type;
+  _begin_y_type begin_y;
 
-   typedef float _angle2_type;
-  _angle2_type angle2;
+   typedef float _end_x_type;
+  _end_x_type end_x;
+
+   typedef float _end_y_type;
+  _end_y_type end_y;
 
    typedef float _min_distance_type;
   _min_distance_type min_distance;
@@ -127,12 +132,12 @@ struct MD5Sum< ::poly_ros::obstacle_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "955dce79f36c78247816cb38f3fca159";
+    return "4c6411f3831341d8f8f6cddd832ed8c4";
   }
 
   static const char* value(const ::poly_ros::obstacle_<ContainerAllocator>&) { return value(); }
-  static const uint64_t static_value1 = 0x955dce79f36c7824ULL;
-  static const uint64_t static_value2 = 0x7816cb38f3fca159ULL;
+  static const uint64_t static_value1 = 0x4c6411f3831341d8ULL;
+  static const uint64_t static_value2 = 0xf8f6cddd832ed8c4ULL;
 };
 
 template<class ContainerAllocator>
@@ -151,11 +156,11 @@ struct Definition< ::poly_ros::obstacle_<ContainerAllocator> >
 {
   static const char* value()
   {
-    return "uint8 nomer\n\
-float32 angle1\n\
-float32 angle2\n\
+    return "float32 begin_x\n\
+float32 begin_y\n\
+float32 end_x\n\
+float32 end_y\n\
 float32 min_distance\n\
-\n\
 \n\
 \n\
 ";
@@ -176,9 +181,10 @@ namespace serialization
   {
     template<typename Stream, typename T> inline static void allInOne(Stream& stream, T m)
     {
-      stream.next(m.nomer);
-      stream.next(m.angle1);
-      stream.next(m.angle2);
+      stream.next(m.begin_x);
+      stream.next(m.begin_y);
+      stream.next(m.end_x);
+      stream.next(m.end_y);
       stream.next(m.min_distance);
     }
 
@@ -198,12 +204,14 @@ struct Printer< ::poly_ros::obstacle_<ContainerAllocator> >
 {
   template<typename Stream> static void stream(Stream& s, const std::string& indent, const ::poly_ros::obstacle_<ContainerAllocator>& v)
   {
-    s << indent << "nomer: ";
-    Printer<uint8_t>::stream(s, indent + "  ", v.nomer);
-    s << indent << "angle1: ";
-    Printer<float>::stream(s, indent + "  ", v.angle1);
-    s << indent << "angle2: ";
-    Printer<float>::stream(s, indent + "  ", v.angle2);
+    s << indent << "begin_x: ";
+    Printer<float>::stream(s, indent + "  ", v.begin_x);
+    s << indent << "begin_y: ";
+    Printer<float>::stream(s, indent + "  ", v.begin_y);
+    s << indent << "end_x: ";
+    Printer<float>::stream(s, indent + "  ", v.end_x);
+    s << indent << "end_y: ";
+    Printer<float>::stream(s, indent + "  ", v.end_y);
     s << indent << "min_distance: ";
     Printer<float>::stream(s, indent + "  ", v.min_distance);
   }

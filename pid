@@ -11,13 +11,8 @@
 
 	
 	<node pkg="poly_ros" type="findObstacles" name="findObstacles" output="screen" >
-	<param name="error" value="0.20" />
-	<param name="degree" value="10.0" />
-	<param name="zero" value="0" />
-	<param name="circle" value="360" />
-	<param name="endElement" value="359" />
-	<param name="gap" value="1" />
-	<param name="minLength" value="2" />
+	<param name="vector_error" value="0.2" />
+	<param name="lidar_error" value="0.1" />
 	</node>
 
 	<node pkg="poly_ros" type="main" name="main" required="false" output="screen">

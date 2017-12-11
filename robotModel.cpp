@@ -25,7 +25,7 @@ double Get_Max(double *data, int length)
 	}
 	return max;
 }
-
+/*
 double CatCenter_LidCenter_Angle(double w_x, double w_y, double lidar_offset_x, double lidar_offset_y, double dist)
 {
 	return acos(-(w_x + lidar_offset_x) / dist) * 180/M_PI;
@@ -34,7 +34,7 @@ double CatCenter_LidCenter_Angle(double w_x, double w_y, double lidar_offset_x, 
 double CatCenter_to_LidCenter(double w_x, double w_y, double lidar_offset_x, double lidar_offset_y)
 {
 	return sqrt(pow(w_x + lidar_offset_x, 2) + pow(lidar_offset_y - w_y, 2));
-}
+}*/
 
 double GetW_X(double x1, double x2, double dx) //находим расстояние от центра робота до центров гусениц по оси X
 {
@@ -84,11 +84,11 @@ double Get_Safety_Tank_Zone(double w_x, double x1, double x2, double p2, double 
 	return Get_Max(d, 4);
 }
 
-double Get_Safety_Angle(double lid_y, double S, double lid_x, double c_x, double c_y) // общая формула для нахождения углов зоны безопасного движения вперед и назад
+/*double Get_Safety_Angle(double lid_y, double S, double lid_x, double c_x, double c_y) // общая формула для нахождения углов зоны безопасного движения вперед и назад
 {
 	return atan((lid_x + c_x)/(lid_y + S + c_y)) * 180/M_PI;
 }
-
+*/
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "robotModel");
@@ -113,35 +113,35 @@ int main(int argc, char **argv)
 	
 	double lidar_rx = Get_Lidar_Right_X(p4, left_caterpillar_width, right_caterpillar_width, distance_between_caterpillar, p2, lidar_x);
 	double lidar_by = Get_Lidar_Back_Y(p1, left_caterpillar_length, caterpillar_offset, p3, lidar_y);
-	double angle1 = Get_Safety_Angle(lidar_y, min_distance, lidar_x, error_x, error_y);
+	/*double angle1 = Get_Safety_Angle(lidar_y, min_distance, lidar_x, error_x, error_y);
 	double angle2 = 360 - Get_Safety_Angle(lidar_y, min_distance, lidar_rx, error_x, error_y);
 	double angle3 = 180 - Get_Safety_Angle(lidar_by, min_distance, lidar_x, error_x, error_y);
 	double angle4 = 180 + Get_Safety_Angle(lidar_by, min_distance, lidar_rx, error_x, error_y);
-	
+	*/
 	double w_x = GetW_X(left_caterpillar_width, right_caterpillar_width, distance_between_caterpillar);
 	double w_y = GetW_Y(caterpillar_offset);
 	double s_x = GetS_X(lidar_x, left_caterpillar_width, w_x, p4);
 	double s_y = GetS_Y(lidar_y, left_caterpillar_length, w_y, p1);
 	
 	double radius;
-	double distance;
-	double angle;
+	double x_offset;
+	double y_offset;
 	switch ((int)turn_mode)
 	{
 		case FIXED_LEFT_CATERPILLAR:
 			radius = Get_Safety_Zone(w_x, right_caterpillar_width, p2, error_x, left_caterpillar_length, caterpillar_offset, p1, p3, error_y);
-			distance = CatCenter_to_LidCenter(w_x, w_y, s_x, s_y);
-			angle = CatCenter_LidCenter_Angle(w_x, w_y, s_x, s_y, distance);
+			x_offset = w_x + s_x;
+			y_offset = -caterpillar_offset / 2 - s_y;
 			break;
 		case FIXED_RIGHT_CATERPILLAR:
 			radius = Get_Safety_Zone(w_x, left_caterpillar_width, p4, error_x, right_caterpillar_lenght, caterpillar_offset, p1, p3, error_y);
-			distance = CatCenter_to_LidCenter(-w_x, -w_y, -s_x, s_y);
-			angle = CatCenter_LidCenter_Angle(-w_x, -w_y, -s_x, s_y, distance);
+			x_offset = -w_x + s_x;
+			y_offset = caterpillar_offset / 2 - s_y;
 			break;
 		case TANK_TURN:
 			radius = Get_Safety_Tank_Zone(w_x, left_caterpillar_width, right_caterpillar_width, p2, error_x, left_caterpillar_length, right_caterpillar_lenght, w_y, p1, p3, p4, error_y);
-			distance = CatCenter_to_LidCenter(0, 0, s_x, s_y);
-			angle = CatCenter_LidCenter_Angle(0, 0, s_x, s_y, distance);
+			x_offset = -s_x;
+			y_offset = s_y;
 			break;
 	}
 	
@@ -149,16 +149,15 @@ int main(int argc, char **argv)
 	robot_pub = nh.advertise<robotModel_parametrs>("robotModel_parametrs", 1000);
 	
 	poly_ros::robotModel_parametrs parametrs;
-	vector<double> p(9);
-	p[0] = angle1;
-	p[1] = angle2;
-	p[2] = angle3;
-	p[3] = angle4;
+	vector<double> p(8);
+	p[0] = lidar_x;
+	p[1] = lidar_rx;
+	p[2] = lidar_y;
+	p[3] = lidar_by;
 	p[4] = min_distance;
-	p[5] = turn_mode;
-	p[6] = radius;
-	p[7] = distance;
-	p[8] = angle;
+	p[5] = radius;
+	p[6] = x_offset;
+	p[7] = y_offset;
 	parametrs.parametr = p;
 	
 	ros::Rate rate(2.0);

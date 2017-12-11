@@ -1,264 +1,198 @@
 #include <iostream>
+//#include <list>
 #include <cmath>
-#include <vector>
 
 #include "ros/ros.h"
 #include "sensor_msgs/LaserScan.h"
 #include "poly_ros/obstacle.h"
 #include "poly_ros/obstacles.h"
 
+#define NUM 360
+
 using namespace std;
 using namespace poly_ros;
 
-double error;
-double degree;
-int zero, circle, endElement, gap, minLength;
+double vector_error, lidar_error;
 
 ros::Publisher chatter_pub;
 
-
-/*
-отыскивает разрыв, начиная с A[0]. Возвращает R0-угол, где впервые втретился разрыв, между A[R0] и A[R0+1].
-В противном случае вернуть признак отсутствия разрыва (NULL)
-*/
-int FirstBreak(float C[360], float *min1_distance, int *min_angle)
+struct Vector
 {
-	int i = 0;
-	*min1_distance = C[0];  //минимальная удаленность препятствия
-	*min_angle = 0;
-	int R0 = 0;   //Ro - первый разрыв
-				  //пока не найден разрыв или не кончатся все элементы
-	while (R0 == zero && i < circle)  //Будем искать пока не найден разрыв (Ro = 0) или пока не прошли весь круг
-	{
-		if (abs(C[i] - C[i + 1]) <= error) //Если текущий элемент и следующий примерно совпадают
-		{
-			    if (C[i] < *min1_distance) //Ищем минимальную удаленность 
-			    {
-					*min1_distance = C[i];
-					*min_angle = i;
-			    }
-		}
-		else
-		{
-			R0 = i + 1;
-		}
-	    i = i + 1;
-	}
-
-	return R0; //Возвращаем первый разрыв
-
-}
-
-
-// Изучение данных
-int StudyData(float B[360])
-{
-	int num = 360; //размер массива
-	poly_ros::obstacle ms;
-	poly_ros::obstacles mas;
-	int *nomer= new int[num];// Выделение памяти для массива
-	int *angle1= new int[num];// Выделение памяти для массива
-	float *min = new float[num]; // Выделение памяти для массива
-	int *angle2= new int[num];// Выделение памяти для массива
-	int *angle_min = new int[num];// Выделение памяти для массива
-	int First_R0;  //Ro - первый разрыв
-	int R01;//Ro - первый разрыв
-	float min1_distance = 0.0;//минимальнаЯ удаленность препятствия
-	int min1_angle = 0; //угол до минимального расстояния
-	First_R0 = FirstBreak(B, &min1_distance, &min1_angle);
-	R01 = First_R0 - 1;
-	float min11_distance = min1_distance;//минимальная удаленность препятствия
-	int min11_angle = min1_angle; //угол до минимального расстояния
-	float min_distance1;//минимальная удаленность препятствия
-	int angle3; //угол до минимального расстояния
-	int Ri = First_R0 + 1; //угл начала препятствия 
-	First_R0 = First_R0 + 1;// угл конца препятсвия
-	int NUL = 0; // признак отстуствия разрыва
-	int quantityr_obstacles = 0;// количество препятствий 
+	float X, Y, Length;
 	
-	if (First_R0 != zero)
-	{	
-		min_distance1 = B[First_R0 + 1];  //минимальнаЯ удаленность препятствия
-		angle3 = First_R0 + 1; //угол до минимальной удаленности
-		
-		while (First_R0 < circle)       //пока не найден круг
-		{
-			if (abs(B[First_R0] - B[First_R0 + 1]) <= error)//текущий элемент и следующий примерно равны, то будем считать, что это одно препятствие
-			{
-				NUL = 0;
-			}
-			else
-			{
-				NUL = 1;
-			}
-			if (B[First_R0] < min_distance1 && B[First_R0] > 0.2) //Ищем минимальную удаленность 
-			{
-				min_distance1 = B[First_R0];
-				angle3 = First_R0;
-			}
+	float GetLength()
+	{
+		return sqrt(pow(X, 2) + pow(Y, 2));
+	}
+	
+	void Normalize()
+	{
+		X /= Length;
+		Y /= Length;
+	}
+};
 
-			if (NUL == gap) // если есть разрыв
-			{
-				if  (First_R0 != endElement) // смотрим все углы до 360
-				{
-				    if(abs(Ri-First_R0) > minLength) //если размер препятствия больше 2
-					{
-						angle1[quantityr_obstacles] = Ri; // запишем угол начала препятствия 
-						min[quantityr_obstacles] = min_distance1;// запишем минимальную дистанцию 
-						angle_min[quantityr_obstacles] = angle3; //запишем угол до минимального расстояния
-						angle2[quantityr_obstacles] = First_R0;// запишем угол конца препятствия
-						nomer[quantityr_obstacles] = quantityr_obstacles + 1; // запишем номер препятствия  
-						quantityr_obstacles = quantityr_obstacles + 1;// увеличим количество препятствий 
-					}
-					NUL = 0;
-					Ri = First_R0 + 1; 
-					min_distance1 = B[First_R0 + 1];	
-					angle3 = First_R0 + 1;
-				}
-			}
-			First_R0 = First_R0 + 1 ;
+struct Point
+{
+	float X, Y;
+};
+
+struct Obstacle
+{
+	Point Begin;
+	Point End;
+	float min_distance;
+};
+
+Obstacle* GetObstacles(float data[NUM], int *number_of_obstacles)
+{	
+	Point points[NUM];
+	int k = 0;
+	for (int i = 0; i < NUM; i++)
+	{
+		if (data[i] >= (float)lidar_error)
+		{
+			points[k].X = data[i] * sin(i * M_PI / 180);
+			points[k].Y = data[i] * cos(i * M_PI / 180);
+			k++;
 		}
-		
-		if (B[First_R0] < min_distance1 && B[First_R0] > 0.2) //Ищем минимальную удаленность 
-			{
-				min_distance1 = B[First_R0];
-				angle3 = First_R0;
-			};
-
-
-		if (((abs(B[359] - B[0])) > error) && (abs(B[359] - B[0]) != B[359])) //Есть разрыв  между А [360] и A[0?]
+	}
+	int len = k;
+	k = 0;
+	Obstacle *obstacles = new Obstacle[len];
+	
+	Vector Vector1, Vector2;
+	float x3, y3, cos_between_vectors, min_distance, temp;
+	float x1 = points[0].X;
+	float y1 = points[0].Y;
+	float x2 = points[1].X;
+	float y2 = points[1].Y;
+	obstacles[0].Begin.X = x1;
+	obstacles[0].Begin.Y = y1;
+	
+	int j = 2;
+	while(j < len)
+	{
+		bool isGap = false;
+		min_distance = 6.0f;
+		while (!isGap && j < len)
 		{
-			angle1[quantityr_obstacles] = Ri; // запишем угол начала препятствия
-			min[quantityr_obstacles] = min_distance1;// запишем минимальную дистанцию 
-			angle_min[quantityr_obstacles] = angle3; //запишем угол до минимального расстояния
-			angle2[quantityr_obstacles] = First_R0;// запишем угол конца препятствия
-			nomer[quantityr_obstacles] = quantityr_obstacles + 1;// запишем номер препятствия 
-			quantityr_obstacles = quantityr_obstacles + 1;// увеличим количество препятствий 
-			Ri = 0;
+			x3 = points[j].X;
+			y3 = points[j].Y;
 			
-		};
+			temp = sqrt(pow(x3, 2) + pow(y3, 2));
+			if (temp < min_distance)
+				min_distance = temp;
+			
+			Vector1.X = x2 - x1;
+			Vector1.Y = y2 - y1;
+			Vector2.X = x3 - x2;
+			Vector2.Y = y3 - y2;
 
-		if(Ri==zero)
-			{
-				min[quantityr_obstacles] = min_distance1;// запишем минимальную дистанцию 
-				angle_min[quantityr_obstacles] = angle3; //запишем угол до минимального расстояния
-				angle2[quantityr_obstacles] = First_R0;// запишем угол конца препятствия
-			}
-		else
-			{
-				if (min11_distance > min_distance1) //Ищем максимальную удаленность 
-				{
-					min1_distance = min_distance1;
-					min1_angle = angle3;
-				}
-				min[quantityr_obstacles] = min11_distance; // запишем минимальную дистанцию 
-				angle_min[quantityr_obstacles] = min11_angle; //запишем угол до минимального расстояния
-				if (abs(B[359] - B[0]) == B[359])
-				    {
-						angle2[quantityr_obstacles] = 359; // запишем угол конца препятствия
-				    }
-				    else
-				    {
-						angle2[quantityr_obstacles] = R01; // запишем угол конца препятствия
-				    }
-			}
-			angle1[quantityr_obstacles] = Ri; // запишем угол начала препятствия
-			nomer[quantityr_obstacles] = quantityr_obstacles + 1; // запишем номер препятствия
-			quantityr_obstacles = quantityr_obstacles + 1;// увеличим количество препятствий 
+			Vector1.Length = Vector1.GetLength();
+			Vector2.Length = Vector2.GetLength();
+			cos_between_vectors = (Vector1.X * Vector2.X + Vector1.Y * Vector2.Y) / (Vector1.Length * Vector2.Length);
+			if (fabs(1 - cos_between_vectors) >= (float)vector_error)
+				isGap = true;
+
+			x1 = x2;
+			y1 = y2;
+			x2 = x3;
+			y2 = y3;
+			j++;
+		}
+		
+		obstacles[k].End.X = x1;
+		obstacles[k].End.Y = y1;
+		obstacles[k].min_distance = min_distance;
+		obstacles[k + 1].Begin.X = x2;
+		obstacles[k + 1].Begin.Y = y2;
+		k++;
 	}
-	else
-	{
-		angle1[quantityr_obstacles] = Ri; // запишем угол начала препятствия
-		min[quantityr_obstacles] = min1_distance;// запишем минимальную дистанцию
-		angle_min[quantityr_obstacles] = min1_angle; //запишем угол до минимального расстояния
-		angle2[quantityr_obstacles] = First_R0;// запишем угол конца препятствия
-		nomer[quantityr_obstacles] = quantityr_obstacles + 1;// запишем номер препятствия 
-		quantityr_obstacles = quantityr_obstacles + 1;// увеличим количество препятствий 
-	}
+	
+	*number_of_obstacles = k;
+	return obstacles;
+}
+/*
+float equation(point begin, point end, point timed) //Возвращает расстояние от точки до прямой
+{
+	float A, B, C, equ, d;
+	// выделяем общее ур-е прямой 
+	A = begin.y - end.y;
+	B = end.x - begin.x;
+	C = begin.x * end.y - end.x * begin.y;
+	equ = A * timed.x + B * timed.y + C; //ур-е прямой, если равно нулю то, точка лежит на прямой
+	d = fabs(equ) / sqrt(pow(A, 2) + pow(B, 2)); //расстояние до точки
+	return d;
+}
 
-	int number_obstacle = 0; // номер препятствия 
-	int Flag = 0; //флажек который следит за сокращение количества препятствий 
+Obstacle* data_struct(const sensor_msgs::LaserScan::ConstPtr& msg, int *k)
+{
+	std::list<dob> data_obstacles;  //Список препятствий Минимальный размер препятствия 2*
+								   
+	dob interim; //обрабатываемое препятствие
+	point timed; //обрабатываемая точка
+	bool Contin = false;
 
-	/* В цикле объединяем элементы если длина препятствия меньше чем degree и 
-	растояние до конечного угла предыдущего препятствия приблизительно равно 
-	растоянию до начального угла другого препятствия то это одно препятствие  */
-	while(number_obstacle < quantityr_obstacles)
+	for (int i = 0; i < 360; i++) //выделение препятствий 
 	{
-		if(abs(angle1[number_obstacle+1] - angle2[number_obstacle+1]) < degree) // если длина препятствия больше чем degree то это препятствие 
-		{
-			// елси растояние до конечного угла предыдущего препятствия приблизительно равно растоянию до начального угла другого препятствия то это одно препятствие 
-			if((abs(B[angle2[number_obstacle - Flag]] - B[angle1[number_obstacle + 1]]) < error))   
+		if (msg->range_min < msg->ranges[i] && msg->ranges[i] < msg->range_max ) //отсеивание шума
+			if (Contin) //если преп продолжается
 			{
-				angle2[number_obstacle - Flag] = angle1[number_obstacle + 1]; //увиличиваем длину препятствия
-				if (min[number_obstacle - Flag] > min[number_obstacle + 1]) // находим минимальную дистанцию
+				timed.x = msg->ranges[i] * cos(i * msg->angle_increment);
+				timed.y = msg->ranges[i] * sin(i * msg->angle_increment);
+				if (equation(interim.begin, interim.end, timed) >= 0.05)
 				{
-					min[number_obstacle - Flag] = min[number_obstacle + 1];
-					angle_min[number_obstacle - Flag] = angle_min[number_obstacle + 1]; 
-				}
-				//смещяем элементы массива
-				angle1[number_obstacle + 1] = angle1[number_obstacle + 2];
-				angle2[number_obstacle + 1] = angle2[number_obstacle + 2];
-				min[number_obstacle + 1] = min[number_obstacle + 2];
-				angle_min[number_obstacle + 1] = angle_min[number_obstacle + 2];
-				angle1[number_obstacle + 2] = angle1[number_obstacle + 3];
-				angle2[number_obstacle + 2] = angle2[number_obstacle + 3];
-				min[number_obstacle + 2] = min[number_obstacle + 3];
-				angle_min[number_obstacle + 2] = angle_min[number_obstacle + 3];
-				if(number_obstacle < quantityr_obstacles - 2) // чтобы не выйти за предел массива 
-				{
-					number_obstacle = number_obstacle + 1;
-				}
-				else
-				{
-					number_obstacle = quantityr_obstacles;
-				}
-				Flag = Flag + 1;
+				interim.end = timed;
+				Contin = false;
+				//запись препятствия в список
+				data_obstacles.push_back(interim);
+				}	
 			}
 			else
 			{
-				Flag = Flag - 1;
-				number_obstacle = number_obstacle + 1;
+				//объявление нового начала и конца
+				interim.begin.x = msg->ranges[i] * cos(i * msg->angle_increment);
+				interim.begin.y = msg->ranges[i] * sin(i * msg->angle_increment);
+				interim.end.x = msg->ranges[i+1] * cos((i+1) * msg->angle_increment);
+				interim.end.y = msg->ranges[i+1] * sin((i+1) * msg->angle_increment);
+				Contin = true;
 			}
-		}
-		else
-		{
-			number_obstacle = number_obstacle + 1;
-		}
 	}
-	quantityr_obstacles = quantityr_obstacles - Flag; //уменьшаем количество препятствий 
-	vector<obstacle> a(quantityr_obstacles);
-	mas.num = quantityr_obstacles; // публикуем количествой препятствий 
-	for (int i = 0; i < quantityr_obstacles; i++) // публикуем данные опрепятствиях
+	
+	for ( auto it = data_obstacles.begin(); it != data_obstacles.end(); ++it  )
 	{
-	    a[i].nomer = nomer[i];
-	    a[i].angle1 = angle1[i];
-	    a[i].angle2 = angle2[i];
-	    a[i].min_distance = min[i];
-		a[i].angle_min = angle_min[i];
-	//    ROS_INFO("(%d, %0.2f, %0.2f, %0.2f)", a[i].nomer, a[i].angle1, a[i].angle2, a[i].min_distance);
+		cout << it->begin.x << ";" << it->begin.y << '\n';
+		cout << it->end.x << ";" << it->end.y << '\n';
 	}
-	mas.mass = a; // публикуем данные опрепятствиях
-	chatter_pub.publish(mas); // публикуем данные в топик 
-	return quantityr_obstacles;
+	ROS_INFO("---------------------------------------------------");
 }
+*/
 
 // получаем данные с лидара 
 void processLaserScan(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
-    int r=0;
-    float A[360];
-    for (int i = 0; i < 360; i++) //заполняем массив данными с лидара  
-    {
-        A[i] = (msg->ranges[i]);
-		//ROS_INFO ("(<%d>,<%0.2f>)", i , A[i]);
-    }
+    float Data[NUM];
+    for (int i = 0; i < NUM; i++) //заполняем массив данными с лидара  
+        Data[i] = (msg->ranges[i]);
 	
-    r = StudyData(A);
+	int num_obst = 0;
+	Obstacle *info = GetObstacles(Data, &num_obst);
 	
-    //ROS_INFO("(<%d>)", r);
-    //ROS_INFO( "( %0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f, %0.2f )", msg->angle_min, msg->angle_max, msg->angle_increment, msg->time_increment, msg->scan_time, msg->range_min, msg->range_max );
+	poly_ros::obstacles obstacles;
+	vector<obstacle> obst(num_obst);
+	for (int i = 0; i < num_obst; i++)
+	{
+		obst[i].begin_x = info[i].Begin.X;
+		obst[i].begin_y = info[i].Begin.Y;
+		obst[i].end_x = info[i].End.X;
+		obst[i].end_y = info[i].End.Y;
+		obst[i].min_distance = info[i].min_distance;
+	}
+	obstacles.num = num_obst;
+	obstacles.mass = obst;
+	chatter_pub.publish(obstacles);
 }
-
 
 int main(int argc, char **argv)
 {	
@@ -266,13 +200,8 @@ int main(int argc, char **argv)
 	ros::NodeHandle nh("~"); //объявление преерменной nh в пространстве имен NodeHandle
 	ros::Subscriber scanSub; //обьявляем узел result подписчиком
 	
-	nh.param("error", error, 0.20);
-	nh.param("degree", degree, 10.0);
-	nh.param("zero", zero, 0);
-	nh.param("circle", circle, 360);
-	nh.param("endElement", endElement, 359);
-	nh.param("gap", gap, 1);
-	nh.param("minLength", minLength, 2);
+	nh.param("vector_error", vector_error, 0.2);
+	nh.param("lidar_error", lidar_error, 0.1);
 	scanSub = nh.subscribe<sensor_msgs::LaserScan>("/scan", 10, &processLaserScan); //подписка на данные с Lidar
 
 	ros::NodeHandle n;

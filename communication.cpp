@@ -13,7 +13,7 @@
 bool obstructionClose = false, prevObstructionClose = false, mapControl = false;
 mavros_msgs::State current_state;
 int moveLocalCoordinates, currentAction, pos_x, pos_y;
-double distinction, angle1, angle2, angle3, angle4, min_distance, turn_mode, radius, distance, angle; 
+double distinction, lidar_x, lidar_rx, lidar_y, lidar_by, min_distance, radius, x_offset, y_offset; 
 
 //Callback-функция - приёмник текущего состояния PixHawk контроллера
 void state_cb(const mavros_msgs::State::ConstPtr& msg)
@@ -115,7 +115,7 @@ void chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
     int k = -1;
     for (int i = 0; i < mas->num; i++)
     {
-		if (obstacleCheck(mas, i, angle1, angle2, currentAction, distance, radius, angle))
+		if (obstacleCheck(mas, i, lidar_x, lidar_rx, currentAction, lidar_by, radius, lidar_y))
 		{
 			if(mas->mass[i].min_distance < min || currentAction == ACTION_TURN_LEFT || currentAction == ACTION_TURN_RIGHT)
 			{
@@ -152,15 +152,14 @@ void chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
 
 void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs)
 {
-	angle1 = parametrs->parametr[0];
-	angle2 = parametrs->parametr[1];
-	angle3 = parametrs->parametr[2];
-	angle4 = parametrs->parametr[3];
+	lidar_x = parametrs->parametr[0];
+	lidar_rx = parametrs->parametr[1];
+	lidar_y = parametrs->parametr[2];
+	lidar_by = parametrs->parametr[3];
 	min_distance = parametrs->parametr[4];
-	turn_mode = parametrs->parametr[5];
-	radius = parametrs->parametr[6];
-	distance = parametrs->parametr[7];
-	angle = parametrs->parametr[8];
+	radius = parametrs->parametr[5];
+	x_offset = parametrs->parametr[6];
+	y_offset = parametrs->parametr[7];
 	//ROS_INFO("EEEEEEEEEEE %0.3f %0.3f %0.3f %0.3f", (float)angle1, (float)angle2, (float)angle3, (float)angle4);
 	//ROS_INFO("EEEEEEEEEEE %0.3f %0.3f %0.3f %0.3f", (float)min_distance, (float)radius, (float)distance, (float)angle);
 }
@@ -182,6 +181,7 @@ bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double r
 	double _min, d;
 	switch(action)
 	{
+		/*
 		case ACTION_MOVE_FORWARD:
 			return  mas->mass[index].angle1 < range1 || 
 					mas->mass[index].angle1 > range2 || 
@@ -198,7 +198,7 @@ bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double r
 		case ACTION_TURN_RIGHT:
 			_min = mas->mass[index].min_distance;
 			d = sqrt(pow(dist, 2) + pow(_min, 2) - 2 * dist * _min * cos(ang - mas->mass[index].angle_min));
-			return (d < rad);
+			return (d < rad);*/
 		default:
 			return true;
 		
