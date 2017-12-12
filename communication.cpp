@@ -10,7 +10,9 @@
 #include "poly_ros/robotModel_parametrs.h"
 #include "poly_ros/target.h"
 
-bool obstructionClose = false, prevObstructionClose = false, mapControl = false;
+const double err = 0.02;
+
+bool obstructionClose = false, mapControl = false;
 mavros_msgs::State current_state;
 int moveLocalCoordinates, currentAction, pos_x, pos_y;
 double distinction, lidar_x, lidar_rx, lidar_y, lidar_by, min_distance, radius, x_offset, y_offset; 
@@ -110,58 +112,43 @@ int send_attitude(mavros_msgs::Mavlink &rmsg)
 
 void chatterCallback(const poly_ros::obstacles::ConstPtr& mas) //new new new
 {
+	float begin_x, begin_y, end_x, end_y;
+	int i = 0;
     obstructionClose = false;
-	float min = 6.0;
-    int k = -1;
-    for (int i = 0; i < mas->num; i++)
+    while (!obstructionClose && i < mas->num)
     {
-		if (obstacleCheck(mas, i, lidar_x, lidar_rx, currentAction, lidar_by, radius, lidar_y))
+		begin_y = mas->mass[i].begin_y;
+		begin_x = mas->mass[i].begin_x;
+		end_y = mas->mass[i].end_y;
+		end_x = mas->mass[i].end_x;
+		if (currentAction == ACTION_TURN_LEFT || currentAction == ACTION_TURN_RIGHT)
 		{
-			if(mas->mass[i].min_distance < min || currentAction == ACTION_TURN_LEFT || currentAction == ACTION_TURN_RIGHT)
-			{
-				min = mas->mass[i].min_distance;
-				k = i;
-			}
+			begin_y += y_offset;
+			begin_x += x_offset;
+			end_y += y_offset;
+			end_x += x_offset;
 		}
-		//ROS_INFO("_________________________ Obstacle %d | Angle: %f | Dist: %0.3f", i, (float)mas->mass[i].angle_min, (float)mas->mass[i].min_distance);
+		double k = (begin_y - end_y) / (begin_x - end_x);
+		double b = begin_y - k * begin_x;
+		
+		if (obstacleCheck(mas, i, lidar_x, lidar_rx, lidar_y, lidar_by, currentAction, k, b, radius))
+			obstructionClose = true;
+		i++;
     }
-	if (currentAction == ACTION_TURN_LEFT || currentAction == ACTION_TURN_LEFT)
-	{
-		if (k != -1)
-			obstructionClose = true;
-	}
-	else
-	{
-		if (mas->mass[k].min_distance < min_distance)
-			obstructionClose = true;
-		/*
-		if (mas->mass[k].min_distance == 0.0)
-		{
-			if (prevObstructionClose)
-				obstructionClose = true;
-		}
-		else if (mas->mass[k].min_distance < min_distance)
-			obstructionClose = true;
-		*/
-	}
-	
-	prevObstructionClose = obstructionClose;
-	//ROS_INFO("________________________INFO: PI: %0.6f", (float)M_PI);
-    //ROS_INFO( "__STAY: %0.3f",  (float)mas->mass[k].min_distance);
 }
 
 void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs)
 {
-	lidar_x = parametrs->parametr[0];
-	lidar_rx = parametrs->parametr[1];
-	lidar_y = parametrs->parametr[2];
-	lidar_by = parametrs->parametr[3];
+	lidar_x = parametrs->parametr[0] + err;
+	lidar_rx = parametrs->parametr[1] + err;
+	lidar_y = parametrs->parametr[2] + err;
+	lidar_by = parametrs->parametr[3] + err;
 	min_distance = parametrs->parametr[4];
 	radius = parametrs->parametr[5];
 	x_offset = parametrs->parametr[6];
 	y_offset = parametrs->parametr[7];
 	//ROS_INFO("EEEEEEEEEEE %0.3f %0.3f %0.3f %0.3f", (float)angle1, (float)angle2, (float)angle3, (float)angle4);
-	//ROS_INFO("EEEEEEEEEEE %0.3f %0.3f %0.3f %0.3f", (float)min_distance, (float)radius, (float)distance, (float)angle);
+	//ROS_INFO("EEEEEEEEEEE %0.3f %0.3f", (float)min_distance, (float)radius);
 }
 
 void test(const poly_ros::target::ConstPtr& msg)
@@ -176,29 +163,29 @@ void test(const poly_ros::target::ConstPtr& msg)
 }
 
 //Проверка наличия препятствия в радиуе обзора
-bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double range1, double range2, int action, double dist, double rad, double ang)
+bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double lidar_x, double lidar_rx, double lidar_y, double lidar_by, int action, double k, double b, double rad)
 {
-	double _min, d;
 	switch(action)
 	{
-		/*
 		case ACTION_MOVE_FORWARD:
-			return  mas->mass[index].angle1 < range1 || 
-					mas->mass[index].angle1 > range2 || 
-					mas->mass[index].angle2 < range1 || 
-					mas->mass[index].angle2 > range2 || 
-					mas->mass[index].angle1 > mas->mass[index].angle2;
+			return (mas->mass[index].begin_x < lidar_x &&
+					mas->mass[index].begin_x > -lidar_rx || 
+					mas->mass[index].end_x < lidar_x &&
+					mas->mass[index].end_x > -lidar_rx ||
+					mas->mass[index].begin_x > lidar_x &&
+					mas->mass[index].begin_x < -lidar_rx) && 
+					mas->mass[index].min_distance < min_distance + lidar_y && b > 0;
 		case ACTION_MOVE_BACK:
-			return  mas->mass[index].angle1 > range1 && 
-					mas->mass[index].angle1 < range2 || 
-					mas->mass[index].angle2 > range1 && 
-					mas->mass[index].angle2 < range2 || 
-					mas->mass[index].angle1 < mas->mass[index].angle2;
+			return (mas->mass[index].begin_x < lidar_x &&
+					mas->mass[index].begin_x > -lidar_rx || 
+					mas->mass[index].end_x < lidar_x &&
+					mas->mass[index].end_x > -lidar_rx ||
+					mas->mass[index].begin_x > lidar_x &&
+					mas->mass[index].begin_x < -lidar_rx) && 
+					mas->mass[index].min_distance < min_distance + lidar_by && b < 0;
 		case ACTION_TURN_LEFT:
 		case ACTION_TURN_RIGHT:
-			_min = mas->mass[index].min_distance;
-			d = sqrt(pow(dist, 2) + pow(_min, 2) - 2 * dist * _min * cos(ang - mas->mass[index].angle_min));
-			return (d < rad);*/
+			return pow(radius, 2) * (pow(k, 2) + 1) - pow(b, 2) > 0 && mas->mass[index].min_distance < min_distance + lidar_x;
 		default:
 			return true;
 		

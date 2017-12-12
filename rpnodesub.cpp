@@ -12,11 +12,11 @@ ros::Publisher chatter_pub;
 
 void go_to_target(const poly_ros::obstacles::ConstPtr& mas)
 {
-	cout << mas->mass[mas->num - 1].begin_x << '\n';
-	cout << mas->mass[mas->num - 1].begin_y << '\n';
-	cout << mas->mass[0].end_x << '\n';
-	cout << mas->mass[0].end_y << '\n';
-	cout << '\n';
+	//cout << mas->mass[mas->num - 1].begin_x << '\n';
+	//cout << mas->mass[mas->num - 1].begin_y << '\n';
+	//cout << mas->mass[0].end_x << '\n';
+	//cout << mas->mass[0].end_y << '\n';
+	//cout << '\n';
 	x = (mas->mass[mas->num - 1].begin_x + mas->mass[0].end_x)/2;
 	y = (mas->mass[mas->num - 1].begin_y + mas->mass[0].end_y)/2;
 }

@@ -188,10 +188,12 @@ void processLaserScan(const sensor_msgs::LaserScan::ConstPtr& msg)
 		obst[i].end_x = info[i].End.X;
 		obst[i].end_y = info[i].End.Y;
 		obst[i].min_distance = info[i].min_distance;
+		//printf("%0.3f;%0.3f\n", -obst[i].end_x, obst[i].end_y);
 	}
 	obstacles.num = num_obst;
 	obstacles.mass = obst;
 	chatter_pub.publish(obstacles);
+	//printf("\n\n");
 }
 
 int main(int argc, char **argv)

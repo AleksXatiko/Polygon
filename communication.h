@@ -54,4 +54,4 @@ void test(const poly_ros::target::ConstPtr& msg);
 //void chatter(const poly_ros::Num::ConstPtr& a);
 
 //Проверка наличия препятствия в радиуе обзора
-bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double range1, double range2, int action, double dist, double rad, double ang);
+bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double lidar_x, double lidar_rx, double lidar_y, double lidar_by, int action, double k, double b, double rad);
