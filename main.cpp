@@ -11,14 +11,65 @@
 #include <string>
 #include <ctime>
 #include "poly_ros/obstacles.h"
+#include "poly_ros/points.h"
 //#include "poly_ros/Num.h"
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 
-int algorithm, pos_x, pos_y, currentAction;
+int algorithm, currentAction, move_mode;
 int moveLocalCoordinates, range1, range2, zero;
-double distinction;
+double distinction, pos_x, pos_y;
+
+struct Vector
+{
+	float X, Y;
+
+	float GetLength()
+	{
+		return sqrt(pow(X, 2) + pow(Y, 2));
+	}
+
+	Vector(float x, float y)
+	{
+		X = x;
+		Y = y;
+	}
+};
+
+void ReceiveObstacleAvoidanceTrajectory(const poly_ros::points::ConstPtr& pts)
+{
+	int k = pts->num;
+	if (move_mode == 2)
+	{
+		float max = -20000, step_x, step_y;
+		for (float x = current_x - 1; x <= current_x + 1; x += 0.1)
+		{
+			for (float y = current_y - 1; y <= current_y + 1; y += 0.1)
+			{
+				if (y != current_y || x != current_x)
+				{
+					Vector v1 = Vector(target_x - x, target_y - y);
+					float len = 0.1f / v1.GetLength() * k;
+					for (int i = 0; i < k; i++)
+					{
+						Vector v2 = Vector(pts->points[i].x - x, pts->points[i].y - y);
+						len += -0.2f / v2.GetLength();
+					}
+					if (len > max)
+					{
+						max = len;
+						step_x = x;
+						step_y = y;
+					}
+				}
+			}
+		}
+		pos_x = step_x * 10;
+		pos_y = step_y * 10;
+		printf("											| %0.3f | %0.3f |\n", step_x, step_y);
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -28,8 +79,8 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     ros::NodeHandle nhPrivate("~");
 
-	nhPrivate.param("pos_x", pos_x, 0);
-	nhPrivate.param("pos_y", pos_y, 0);
+	nhPrivate.param("pos_x", pos_x, 0.0);
+	nhPrivate.param("pos_y", pos_y, 0.0);
 	nhPrivate.param("algorithm", algorithm, 1);
     nhPrivate.param("movelocalCoorginates", moveLocalCoordinates, 84);
     nhPrivate.param("distinction", distinction, 0.2);
@@ -37,6 +88,7 @@ int main(int argc, char **argv)
     nhPrivate.param("range2", range2, 310);
 	//nhPrivate.param("min_distance", min_distance, 0.45);
     nhPrivate.param("zero", zero, 0);
+    nhPrivate.param("move_mode", move_mode, 0);
 	
     ROS_INFO("movee=%d", algorithm);
 
@@ -51,7 +103,9 @@ int main(int argc, char **argv)
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
             ("mavros/state", 10, state_cb);
 			
-    ros::Subscriber sub = nh.subscribe("obstacles" , 1000, chatterCallback);  //new new new
+    ros::Subscriber sub = nh.subscribe("obstacles" , 1000, chatterCallback); 
+	
+    ros::Subscriber sub_obst = nh.subscribe("points" , 1000, ReceiveObstacleAvoidanceTrajectory); //new new new
 	
 	ros::Subscriber test_sub = nh.subscribe("target" , 1000, test);
 	
@@ -162,17 +216,23 @@ int main(int argc, char **argv)
 		double control = 0.0;//управляющее воздействие
 		//algorithm = 3; //выбранный алгоритм движения
 		//ROS_INFO("ALGORITHM %d", algorithm);
-
-		//Если знаем, где мы и куда нам надо - предпримем какие-то действия, если нужно
-		if (pos_x != 0 || pos_y != 0)
+		
+		double x, y;
+		if (pos_x == 0 && pos_y == 0)
 		{
-			target_x = pos_x;
-			target_y = pos_y;
+			x = target_x;
+			y = target_y;
+		}
+		else
+		{
+			x = pos_x;
+			y = pos_y;
 			target_set = 1;
 		}
+		//Если знаем, где мы и куда нам надо - предпримем какие-то действия, если нужно
 		if( target_set && position_set )
 			//узнаем, исходя из координат  робота, координат заданной цели и угла робота относительно цели, какое действие нужно предпринять, чтобы оказаться в заданной точке
-			currentAction = getAction(current_x, current_y, current_yaw, target_x, target_y, &local_angle_to_target);
+			currentAction = getAction(current_x, current_y, current_yaw, x, y, &local_angle_to_target);
 			
 			//взависимости от полученного действия рассчитаем упраляющее воздействие на шасси 			
 			control = controlAction(algorithm, currentAction, local_angle_to_target);

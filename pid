@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>	
+	<arg name="mode" default="0" />
 	<arg name="regul" default="1" />
-	<arg name="x" default="0" />
-	<arg name="y" default="0" />
+	<arg name="x" default="0.0" />
+	<arg name="y" default="0.0" />
 	<arg name="angle" default="0" />
 	
 	<node pkg="mavros" type="gcs_bridge" name="gcs_bridge" required="false" output="log">
@@ -22,6 +23,7 @@
 	<param name="algorithm" value="$(arg regul)" />
 	<param name="pos_x" value="$(arg x)" />
 	<param name="pos_y" value="$(arg y)" />
+	<param name="move_mode" value="$(arg mode)" />
 	</node>
 	
 	<node pkg="poly_ros" type="rpnodesub" name="rpnodesub" required="false" output="screen">

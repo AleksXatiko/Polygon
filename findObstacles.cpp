@@ -1,11 +1,12 @@
 #include <iostream>
-//#include <list>
 #include <cmath>
 
 #include "ros/ros.h"
 #include "sensor_msgs/LaserScan.h"
 #include "poly_ros/obstacle.h"
 #include "poly_ros/obstacles.h"
+#include "poly_ros/points.h"
+#include "poly_ros/target.h"
 
 #define NUM 360
 
@@ -15,6 +16,7 @@ using namespace poly_ros;
 double vector_error, lidar_error;
 
 ros::Publisher chatter_pub;
+ros::Publisher points_pub;
 
 struct Vector
 {
@@ -57,6 +59,17 @@ Obstacle* GetObstacles(float data[NUM], int *number_of_obstacles)
 			k++;
 		}
 	}
+	poly_ros::points _points;
+	vector<target> targets(k);
+	for (int i = 0; i < k; i++)
+	{
+		targets[i].x = points[i].X;
+		targets[i].y = points[i].Y;
+	}
+	_points.num = k;
+	_points.points = targets;
+	points_pub.publish(_points);
+	
 	int len = k;
 	k = 0;
 	Obstacle *obstacles = new Obstacle[len];
@@ -113,61 +126,6 @@ Obstacle* GetObstacles(float data[NUM], int *number_of_obstacles)
 	*number_of_obstacles = k;
 	return obstacles;
 }
-/*
-float equation(point begin, point end, point timed) //Возвращает расстояние от точки до прямой
-{
-	float A, B, C, equ, d;
-	// выделяем общее ур-е прямой 
-	A = begin.y - end.y;
-	B = end.x - begin.x;
-	C = begin.x * end.y - end.x * begin.y;
-	equ = A * timed.x + B * timed.y + C; //ур-е прямой, если равно нулю то, точка лежит на прямой
-	d = fabs(equ) / sqrt(pow(A, 2) + pow(B, 2)); //расстояние до точки
-	return d;
-}
-
-Obstacle* data_struct(const sensor_msgs::LaserScan::ConstPtr& msg, int *k)
-{
-	std::list<dob> data_obstacles;  //Список препятствий Минимальный размер препятствия 2*
-								   
-	dob interim; //обрабатываемое препятствие
-	point timed; //обрабатываемая точка
-	bool Contin = false;
-
-	for (int i = 0; i < 360; i++) //выделение препятствий 
-	{
-		if (msg->range_min < msg->ranges[i] && msg->ranges[i] < msg->range_max ) //отсеивание шума
-			if (Contin) //если преп продолжается
-			{
-				timed.x = msg->ranges[i] * cos(i * msg->angle_increment);
-				timed.y = msg->ranges[i] * sin(i * msg->angle_increment);
-				if (equation(interim.begin, interim.end, timed) >= 0.05)
-				{
-				interim.end = timed;
-				Contin = false;
-				//запись препятствия в список
-				data_obstacles.push_back(interim);
-				}	
-			}
-			else
-			{
-				//объявление нового начала и конца
-				interim.begin.x = msg->ranges[i] * cos(i * msg->angle_increment);
-				interim.begin.y = msg->ranges[i] * sin(i * msg->angle_increment);
-				interim.end.x = msg->ranges[i+1] * cos((i+1) * msg->angle_increment);
-				interim.end.y = msg->ranges[i+1] * sin((i+1) * msg->angle_increment);
-				Contin = true;
-			}
-	}
-	
-	for ( auto it = data_obstacles.begin(); it != data_obstacles.end(); ++it  )
-	{
-		cout << it->begin.x << ";" << it->begin.y << '\n';
-		cout << it->end.x << ";" << it->end.y << '\n';
-	}
-	ROS_INFO("---------------------------------------------------");
-}
-*/
 
 // получаем данные с лидара 
 void processLaserScan(const sensor_msgs::LaserScan::ConstPtr& msg)
@@ -208,11 +166,8 @@ int main(int argc, char **argv)
 
 	ros::NodeHandle n;
 	chatter_pub = n.advertise<obstacles>("obstacles",1000); //публикация обработанных данных (карта препятствий)
+	points_pub = n.advertise<points>("points",1000); 
 	ros::spin(); 
 	
 	return 0;
 }
-
-
-
-

@@ -12,9 +12,9 @@
 
 const double err = 0.02;
 
-bool obstructionClose = false, mapControl = false;
+bool obstructionClose = false;
 mavros_msgs::State current_state;
-int moveLocalCoordinates, currentAction, pos_x, pos_y;
+int moveLocalCoordinates, currentAction, pos_x, pos_y, move_mode;
 double distinction, lidar_x, lidar_rx, lidar_y, lidar_by, min_distance, radius, x_offset, y_offset; 
 
 //Callback-функция - приёмник текущего состояния PixHawk контроллера
@@ -34,7 +34,7 @@ void to_px_cb(const mavros_msgs::Mavlink::ConstPtr& rmsg)
     mavlink_message_t mmsg;
 
     ROS_INFO("gcs_recv: %d-%d", rmsg->sysid, rmsg->msgid);
-    if(rmsg->msgid == moveLocalCoordinates)
+    if(rmsg->msgid == moveLocalCoordinates && move_mode != 0)
     {
         mavros_msgs::mavlink::convert(*rmsg, mmsg); // from mavlink to ros
         mavlink_msg_set_position_target_local_ned_decode(&mmsg, &pos_ned); // decode mavlink to struct
@@ -44,9 +44,8 @@ void to_px_cb(const mavros_msgs::Mavlink::ConstPtr& rmsg)
         target_y = pos_ned.y;
         target_z = pos_ned.z;
 		target_set = 1;
-		mapControl = true;
 
-        //ROS_INFO("target x,y=(%0.2f,%0.2f)", target_x, target_y);
+        ROS_INFO("target x,y=(%0.2f,%0.2f)", target_x, target_y);
     }
 }
 
@@ -153,12 +152,12 @@ void GetData(const poly_ros::robotModel_parametrs::ConstPtr& parametrs)
 
 void test(const poly_ros::target::ConstPtr& msg)
 {
-	if (!mapControl && pos_x == 0 && pos_y == 0)
+	if (move_mode == 0 && pos_x == 0 && pos_y == 0)
 	{
 		target_x = msg->x;
 		target_y = msg->y;
 		target_set = 1;
-		ROS_INFO("___________________G | %0.3f | %0.3f", msg->x, msg->y);
+		//ROS_INFO("___________________G | %0.3f | %0.3f", msg->x, msg->y);
 	}
 }
 
@@ -168,24 +167,24 @@ bool obstacleCheck(const poly_ros::obstacles::ConstPtr& mas, int index, double l
 	switch(action)
 	{
 		case ACTION_MOVE_FORWARD:
-			return (mas->mass[index].begin_x < lidar_x &&
-					mas->mass[index].begin_x > -lidar_rx || 
-					mas->mass[index].end_x < lidar_x &&
-					mas->mass[index].end_x > -lidar_rx ||
-					mas->mass[index].begin_x > lidar_x &&
-					mas->mass[index].begin_x < -lidar_rx) && 
+			return ((mas->mass[index].begin_x < lidar_x &&
+					mas->mass[index].begin_x > -lidar_rx) || 
+					(mas->mass[index].end_x < lidar_x &&
+					mas->mass[index].end_x > -lidar_rx) ||
+					(mas->mass[index].end_x > lidar_x &&
+					mas->mass[index].begin_x < -lidar_rx)) && 
 					mas->mass[index].min_distance < min_distance + lidar_y && b > 0;
 		case ACTION_MOVE_BACK:
-			return (mas->mass[index].begin_x < lidar_x &&
-					mas->mass[index].begin_x > -lidar_rx || 
-					mas->mass[index].end_x < lidar_x &&
-					mas->mass[index].end_x > -lidar_rx ||
-					mas->mass[index].begin_x > lidar_x &&
-					mas->mass[index].begin_x < -lidar_rx) && 
+			return ((mas->mass[index].begin_x < lidar_x &&
+					mas->mass[index].begin_x > -lidar_rx) || 
+					(mas->mass[index].end_x < lidar_x &&
+					mas->mass[index].end_x > -lidar_rx) ||
+					(mas->mass[index].end_x > lidar_x &&
+					mas->mass[index].begin_x < -lidar_rx)) && 
 					mas->mass[index].min_distance < min_distance + lidar_by && b < 0;
 		case ACTION_TURN_LEFT:
 		case ACTION_TURN_RIGHT:
-			return pow(radius, 2) * (pow(k, 2) + 1) - pow(b, 2) > 0 && mas->mass[index].min_distance < min_distance + lidar_x;
+			return pow(radius, 2) * (pow(k, 2) + 1) - pow(b, 2) > 0 && mas->mass[index].min_distance < radius + lidar_x;
 		default:
 			return true;
 		
